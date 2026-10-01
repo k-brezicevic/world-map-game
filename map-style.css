@@ -1,0 +1,18 @@
+/*
+Map color palette.
+
+MapLibre renders via WebGL, not the DOM, so it can't read these
+values directly the way regular page elements can — instead, main.js
+reads them at runtime via getComputedStyle() and passes them into
+MapLibre's style/paint properties. Keeping them here means every
+color for the map lives in one CSS file, edit these and refresh to
+retheme the map without touching main.js at all.
+*/
+:root {
+  --map-background: #0f1720;  /* area outside the world (ocean/void) */
+  --map-land: #33465a;        /* default, unselected country fill */
+  --map-land-hover: #526a83;  /* fill of an unselected country under the mouse */
+  --map-outline: #0f1720;     /* country border lines */
+  --map-selected: #e8a33d;    /* single-click highlight (orange) */
+  --map-confirmed: #3fae5a;   /* double-click confirm (green) */
+}

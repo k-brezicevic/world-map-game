@@ -1,0 +1,327 @@
+:root {
+  color-scheme: dark; /* see the matching <meta> in index.html */
+  --bg: #16202b;  /* page background, a step brighter than the map (--map-background) */
+  --panel: #16212c;
+  --ink: #e7edf3;
+  --muted: #7c8a99;
+  --border: #223140;
+  /* Settings button */
+  --button-outline: #252e37;     /* outline, sides (dark grey) */
+  --button-edge-light: #34414e;  /* outline, top edge (catching the light) */
+  --button-edge-dark: #0b1117;   /* outline, bottom edge (in shadow) */
+  --button-top: #243241;         /* top of the gradient fill (bottom is --panel) */
+  --button-top-hover: #2b3b4c;   /* top of the gradient on hover / while open */
+  --button-icon: #9aa7b5;        /* gear icon (brightens to --ink on hover) */
+
+  /* Double-click speed slider (outline colours shared with the button) */
+  --slider-groove: #131c26;           /* recessed bar */
+  --slider-thumb-top: #33465a;        /* handle gradient, top */
+  --slider-thumb-top-hover: #3d5269;  /* handle gradient, top, on hover */
+  --slider-thumb-bottom: #1e2b38;     /* handle gradient, bottom */
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  position: relative; /* anchors #settings to the top-right corner */
+  padding: 1.5rem 1.5rem 1rem;
+  text-align: center;
+}
+
+h1 {
+  margin: 0 0 0.4rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+#status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  min-height: 1.3em;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  padding: 0 1rem 1rem;
+}
+
+/* The map sits slightly recessed into the page: an inner shadow all
+   the way round, with no outline. The background matches the map's
+   own ocean colour (--map-background), so no lighter edge shows
+   where the map canvas meets the rounded corners. */
+#map-wrapper {
+  position: relative; /* anchors the ::after shadow overlay */
+  flex: 1;
+  background: var(--map-background); /* defined in map-style.css */
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 60vh;
+}
+
+/* The map canvas would paint over an inset box-shadow on #map-wrapper
+   itself, so the shadow lives on an overlay above the canvas instead.
+   pointer-events: none lets clicks and drags pass through to the map. */
+#map-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* Centred (no offset) so the shading is equal on all four edges;
+     the 2px spread makes up for the depth the old 3px top offset gave. */
+  box-shadow:
+    inset 0 0 8px 2px rgba(0, 0, 0, 0.55),
+    inset 0 0 2px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Settings button + dropdown panel (top-right of the page). */
+#settings {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10; /* above the map */
+  text-align: left;
+}
+
+/* Raised button style, shared by the settings button and the map's
+   zoom in/out buttons (MapLibre's NavigationControl). The #map prefix
+   gives these rules enough specificity to override maplibre-gl.css. */
+#settings-button,
+#map .maplibregl-ctrl-group button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  /* Raised look, lit from the top-left:
+     - gradient fill, lighter at the top and fading to the panel colour;
+     - bevelled outline: lighter top edge, darker bottom edge;
+     - a drop shadow underneath (a soft wide one plus a tight one),
+       and a faint highlight line just inside the top edge. */
+  background: linear-gradient(to bottom, var(--button-top), var(--panel));
+  color: var(--button-icon);
+  border: 1px solid var(--button-outline);
+  border-top-color: var(--button-edge-light);
+  border-bottom-color: var(--button-edge-dark);
+  border-radius: 8px;
+  /* Offsets are (right, down): the shadow falls to the bottom-right,
+     as if lit from the top-left. */
+  box-shadow:
+    3px 4px 10px rgba(0, 0, 0, 0.5),
+    1px 1px 2px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+
+#settings-button:hover,
+#settings-button[aria-expanded="true"],
+#map .maplibregl-ctrl-group button:not(:disabled):hover {
+  color: var(--ink);
+  background: linear-gradient(to bottom, var(--button-top-hover), var(--panel));
+}
+
+/* Pressed: the gradient flips and the shadow tightens, and the button
+   shifts down 1px, so it looks pushed in. */
+#settings-button:active,
+#map .maplibregl-ctrl-group button:not(:disabled):active {
+  background: linear-gradient(to bottom, var(--panel), var(--button-top));
+  box-shadow:
+    1px 1px 2px rgba(0, 0, 0, 0.6),
+    inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  transform: translateY(1px);
+}
+
+#settings-button:focus-visible,
+#map .maplibregl-ctrl-group button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Zoom buttons: drop MapLibre's white box around the pair and show
+   them as two separate raised buttons, stacked with a gap. */
+#map .maplibregl-ctrl-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Disabled (e.g. zoom-out at minimum zoom): MapLibre already fades the
+   icon; also drop the pointer cursor. */
+#map .maplibregl-ctrl-group button:disabled {
+  cursor: default;
+}
+
+/* MapLibre draws the +/- icons as dark background images, which can't
+   follow the text colour. Replace them with masks filled with
+   currentColor, so they match the gear icon (and brighten on hover). */
+#map .maplibregl-ctrl-group .maplibregl-ctrl-icon {
+  width: 20px;
+  height: 20px;
+  background-image: none;
+  background-color: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+
+#map .maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon {
+  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
+}
+
+#map .maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon {
+  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
+}
+
+#settings-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 260px;
+  max-width: calc(100vw - 2rem);
+  padding: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+#settings-panel[hidden] {
+  display: none;
+}
+
+#settings-panel label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.settings-hint {
+  margin: 0.25rem 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* Double-click speed slider: a recessed groove (like the map) with a
+   raised handle (like the settings button). Browsers need the track
+   and handle styled separately for Chrome/Edge (-webkit-) and
+   Firefox (-moz-); the two sets of rules are otherwise identical. */
+#double-click-delay {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 20px; /* room for the handle, so it isn't clipped */
+  margin: 0.25rem 0;
+  background: none;
+  cursor: pointer;
+}
+
+#double-click-delay::-webkit-slider-runnable-track {
+  height: 8px;
+  background: var(--slider-groove);
+  border-radius: 4px;
+  box-shadow:
+    inset 1px 2px 3px rgba(0, 0, 0, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+#double-click-delay::-moz-range-track {
+  height: 8px;
+  background: var(--slider-groove);
+  border-radius: 4px;
+  box-shadow:
+    inset 1px 2px 3px rgba(0, 0, 0, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+#double-click-delay::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box; /* include the 1px border in the 18px */
+  width: 18px;
+  height: 18px;
+  margin-top: -5px; /* centres the 18px handle on the 8px track */
+  background: linear-gradient(to bottom, var(--slider-thumb-top), var(--slider-thumb-bottom));
+  border: 1px solid var(--button-outline);
+  border-top-color: var(--button-edge-light);
+  border-bottom-color: var(--button-edge-dark);
+  border-radius: 50%;
+  box-shadow:
+    2px 2px 5px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+#double-click-delay::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(to bottom, var(--slider-thumb-top), var(--slider-thumb-bottom));
+  border: 1px solid var(--button-outline);
+  border-top-color: var(--button-edge-light);
+  border-bottom-color: var(--button-edge-dark);
+  border-radius: 50%;
+  box-shadow:
+    2px 2px 5px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+#double-click-delay:hover::-webkit-slider-thumb {
+  background: linear-gradient(to bottom, var(--slider-thumb-top-hover), var(--slider-thumb-bottom));
+}
+
+#double-click-delay:hover::-moz-range-thumb {
+  background: linear-gradient(to bottom, var(--slider-thumb-top-hover), var(--slider-thumb-bottom));
+}
+
+/* Keyboard focus: same ring as the buttons, around the handle. */
+#double-click-delay:focus {
+  outline: none;
+}
+
+#double-click-delay:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+#double-click-delay:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.settings-scale {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+#double-click-delay-value {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* MapLibre needs its container to have an explicit height/width —
+   it fills 100% of #map-wrapper here. */
+#map {
+  width: 100%;
+  height: 100%;
+}

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- The page is already dark, so stop dark-mode tools from recolouring it:
+     - darkreader-lock: tells the Dark Reader extension to leave the page alone.
+     - color-scheme: tells the browser (including Chrome's built-in "auto dark
+       mode") that the page is designed for dark, so it isn't inverted. -->
+<meta name="darkreader-lock">
+<meta name="color-scheme" content="dark">
+<title>Country Click Game — Prototype</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+<!-- MapLibre GL JS — pinned to 5.6.1 (last pre-v6 release using the
+     classic <script> UMD bundle; v6 requires ES modules + WebGL2).
+     Served from jsDelivr rather than unpkg, since unpkg was
+     unreachable on this network during testing. -->
+<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.1/dist/maplibre-gl.js"></script>
+
+<!-- Turf.js — geometry utilities, used to clean up minor polygon
+     defects (thin sliver artifacts) in the source country data.
+     Using the "@6" major-version alias (resolves to the latest 6.x
+     release) rather than an exact pinned patch version — verified
+     this exact URL loads correctly. -->
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+<link rel="stylesheet" href="page-style.css">
+<link rel="stylesheet" href="map-style.css">
+</head>
+<body>
+  <header>
+    <h1>Click a country</h1>
+    <p id="status">Nothing selected yet.</p>
+
+    <!-- Settings button + dropdown panel, top-right of the page. Wired
+         up in settings.js. -->
+    <div id="settings">
+      <button id="settings-button" type="button" aria-label="Settings"
+              aria-expanded="false" aria-controls="settings-panel">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"
+             fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+
+      <div id="settings-panel" hidden>
+        <label for="double-click-delay">Double-click speed</label>
+        <p class="settings-hint">Longest delay between two clicks that still counts as a double-click.</p>
+        <input type="range" id="double-click-delay" min="150" max="800" step="10">
+        <div class="settings-scale">
+          <span>Quicker</span>
+          <output id="double-click-delay-value" for="double-click-delay"></output>
+          <span>Slower</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="map-wrapper">
+      <div id="map"></div>
+    </div>
+  </main>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
