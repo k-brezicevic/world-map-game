@@ -13,7 +13,7 @@
   --button-top-hover: #2b3b4c;   /* top of the gradient on hover / while open */
   --button-icon: #9aa7b5;        /* gear icon (brightens to --ink on hover) */
 
-  /* Double-click speed slider (outline colours shared with the button) */
+  /* Double-click interval slider (outline colours shared with the button) */
   --slider-groove: #131c26;           /* recessed bar */
   --slider-thumb-top: #33465a;        /* handle gradient, top */
   --slider-thumb-top-hover: #3d5269;  /* handle gradient, top, on hover */
@@ -91,18 +91,37 @@ main {
   z-index: 1;
 }
 
-/* Settings button + dropdown panel (top-right of the page). */
-#settings {
+/* Info + settings buttons, side by side in the top-right of the page.
+   Each wraps its button and dropdown panel; the panel opens below. */
+#header-tools {
   position: absolute;
   top: 1rem;
   right: 1rem;
   z-index: 10; /* above the map */
+  display: flex;
+  gap: 8px;
   text-align: left;
 }
 
-/* Raised button style, shared by the settings button and the map's
-   zoom in/out buttons (MapLibre's NavigationControl). The #map prefix
-   gives these rules enough specificity to override maplibre-gl.css. */
+#info,
+#settings {
+  position: relative; /* anchors each dropdown panel under its button */
+}
+
+/* Narrow screens (phones): a centred title would run into the buttons,
+   so align it left and keep it clear of them (2 x 40px buttons + 8px gap,
+   plus the 1rem edge offset and a little breathing room). */
+@media (max-width: 520px) {
+  header {
+    text-align: left;
+    padding-right: calc(1rem + 88px + 0.75rem);
+  }
+}
+
+/* Raised button style, shared by the info and settings buttons and the
+   map's zoom in/out buttons (MapLibre's NavigationControl). The #map
+   prefix gives these rules enough specificity to override maplibre-gl.css. */
+#info-button,
 #settings-button,
 #map .maplibregl-ctrl-group button {
   display: grid;
@@ -130,6 +149,8 @@ main {
   cursor: pointer;
 }
 
+#info-button:hover,
+#info-button[aria-expanded="true"],
 #settings-button:hover,
 #settings-button[aria-expanded="true"],
 #map .maplibregl-ctrl-group button:not(:disabled):hover {
@@ -139,6 +160,7 @@ main {
 
 /* Pressed: the gradient flips and the shadow tightens, and the button
    shifts down 1px, so it looks pushed in. */
+#info-button:active,
 #settings-button:active,
 #map .maplibregl-ctrl-group button:not(:disabled):active {
   background: linear-gradient(to bottom, var(--panel), var(--button-top));
@@ -148,6 +170,7 @@ main {
   transform: translateY(1px);
 }
 
+#info-button:focus-visible,
 #settings-button:focus-visible,
 #map .maplibregl-ctrl-group button:focus-visible {
   outline: 2px solid var(--ink);
@@ -191,6 +214,8 @@ main {
   --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
 }
 
+/* Dropdown panels (info and settings). */
+#info-panel,
 #settings-panel {
   position: absolute;
   top: calc(100% + 0.5rem);
@@ -204,8 +229,53 @@ main {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
+#info-panel[hidden],
 #settings-panel[hidden] {
   display: none;
+}
+
+/* The info panel holds longer text: wider, and it scrolls if the window
+   is too short to show it all. It sits under the info button, which is
+   one button (40px + 8px gap) left of the edge, so it's shifted right
+   by that much to line up with the settings panel's right edge. */
+#info-panel {
+  width: 360px;
+  max-width: calc(100vw - 2rem);
+  right: -48px;
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+#info-panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+#info-panel p {
+  margin: 0 0 0.6rem;
+  /* Between --muted (#7c8a99) and the bullet points' --ink (#e7edf3). */
+  color: #a7b2be;
+}
+
+#info-panel p:last-child {
+  margin-bottom: 0;
+}
+
+#info-panel ul {
+  margin: 0 0 0.75rem;
+  padding-left: 1.1rem;
+}
+
+#info-panel li {
+  margin-bottom: 0.35rem;
+}
+
+#info-panel li strong {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 #settings-panel label {
@@ -220,7 +290,7 @@ main {
   font-size: 0.8rem;
 }
 
-/* Double-click speed slider: a recessed groove (like the map) with a
+/* Double-click interval slider: a recessed groove (like the map) with a
    raised handle (like the settings button). Browsers need the track
    and handle styled separately for Chrome/Edge (-webkit-) and
    Firefox (-moz-); the two sets of rules are otherwise identical. */

@@ -14,6 +14,7 @@ additional detail while zooming in.
 
 import { adjust } from './adjust.js';
 import { initSettings } from './settings.js';
+import { initPanel } from './panels.js';
 import { initEventHandling, isInteractive } from './handler.js';
 
 const COUNTRIES_GEOJSON_URL =
@@ -23,7 +24,9 @@ document.addEventListener('DOMContentLoaded', main);
 
 async function main() {
 
-  // Settings panel works independently of the map, so set it up first.
+  // The info and settings panels work independently of the map, so set
+  // them up first.
+  initPanel('info', 'info-button', 'info-panel');
   initSettings();
 
   // Temporary status text for testing purposes.

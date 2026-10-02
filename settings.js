@@ -8,6 +8,8 @@ between visits; if storage is unavailable (e.g. private browsing) the
 setting still works, it just resets to the default on reload.
 */
 
+import { initPanel } from './panels.js';
+
 const DEFAULT_DOUBLE_CLICK_DELAY_MS = 250;
 const STORAGE_KEY = 'worldMapGame.doubleClickDelayMs';
 
@@ -19,8 +21,9 @@ export function getDoubleClickDelay() {
 }
 
 export function initSettings() {
-  const button = document.getElementById('settings-button');
-  const panel = document.getElementById('settings-panel');
+  // Opening/closing the panel (shared with the info panel, see panels.js).
+  initPanel('settings', 'settings-button', 'settings-panel');
+
   const slider = document.getElementById('double-click-delay');
   const valueEl = document.getElementById('double-click-delay-value');
 
@@ -34,24 +37,6 @@ export function initSettings() {
     doubleClickDelayMs = Number(slider.value);
     valueEl.textContent = `${doubleClickDelayMs} ms`;
     saveDoubleClickDelay(doubleClickDelayMs);
-  });
-
-  const setOpen = open => {
-    panel.hidden = !open;
-    button.setAttribute('aria-expanded', String(open));
-  };
-
-  button.addEventListener('click', () => setOpen(panel.hidden));
-
-  // Close when clicking anywhere outside the settings area, or on Escape.
-  document.addEventListener('click', e => {
-    if (!panel.hidden && !e.target.closest('#settings')) setOpen(false);
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !panel.hidden) {
-      setOpen(false);
-      button.focus();
-    }
   });
 }
 
