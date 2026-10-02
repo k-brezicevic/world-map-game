@@ -1,7 +1,7 @@
 import { getDoubleClickDelay } from './settings.js';
 
 // Features still drawn on the map but ignored by clicks and hover
-// (and left out of listCountries() in main.js).
+// (and left out of listCountries() in main.js and out of the game).
 const NON_INTERACTIVE_COUNTRIES = ['Antarctica'];
 
 export function isInteractive(feature) {
@@ -14,18 +14,27 @@ export function isInteractive(feature) {
 // bigger country (Vatican City inside Italy), the marker is the one hit.
 const INTERACTIVE_LAYERS = ['countries-fill', 'countries-markers-hit'];
 
-export function initEventHandling(map, statusEl) {
-  let selectedFeatureId = null;       // orange — single-click, one at a time
-  let selectedFeatureName = null;
-  const confirmedFeatureIds = new Set(); // green — double-click, can have several at once
+/*
+Mouse input on the map: hover highlight, single-click selection (orange)
+and double-click confirmation.
+  onConfirm(countryId): called when the player double-clicks a country;
+                        countryId is the country's name (its map id).
+Returns controls for the game:
+  clearSelection():  removes the orange selection.
+  setLocked(locked): while locked, clicks are ignored (hover still works),
+                     e.g. while the game shows the result of an answer.
+*/
+export function initEventHandling(map, { onConfirm }) {
+  let selectedFeatureId = null;   // orange — single-click, one at a time
+  let locked = false;
 
   // Click behavior, in three cases:
-  //  1. Click on a country with no state yet -> select it (orange),
+  //  1. Click on a country that isn't selected -> select it (orange),
   //     instantly, no delay.
   //  2. A SECOND click landing on the same country within the
   //     double-click window (adjustable with the slider in the
   //     settings panel, see settings.js) -> treated as a double-click
-  //     -> confirm it (green), instantly.
+  //     -> confirmed as the player's answer (onConfirm), instantly.
   //  3. A click on the currently-selected country that ISN'T fast
   //     enough to count as case 2 -> this would normally deselect it,
   //     but instead of doing that immediately, we wait out the same
@@ -51,7 +60,25 @@ export function initEventHandling(map, statusEl) {
     return isInteractive(feature) ? feature : null;
   };
 
+  const cancelPendingDeselect = () => {
+    if (pendingDeselectTimer) {
+      clearTimeout(pendingDeselectTimer);
+      pendingDeselectTimer = null;
+    }
+  };
+
+  const setSelected = featureId => {
+    if (selectedFeatureId !== null) {
+      map.setFeatureState({ source: 'countries', id: selectedFeatureId }, { selected: false });
+    }
+    selectedFeatureId = featureId;
+    if (selectedFeatureId !== null) {
+      map.setFeatureState({ source: 'countries', id: selectedFeatureId }, { selected: true });
+    }
+  };
+
   map.on('click', INTERACTIVE_LAYERS, e => {
+    if (locked) return;
     const feature = countryAt(e);
     if (!feature) return;
     const featureId = feature.id;
@@ -66,21 +93,12 @@ export function initEventHandling(map, statusEl) {
       // Reset tracking so a third rapid click starts fresh.
       lastClickFeatureId = null;
       lastClickTime = 0;
-
       // A deferred deselect might still be pending from the previous
       // click on this same country — cancel it, since we're
       // confirming instead.
-      if (pendingDeselectTimer) {
-        clearTimeout(pendingDeselectTimer);
-        pendingDeselectTimer = null;
-      }
-
-      if (selectedFeatureId === featureId) {
-        map.setFeatureState({ source: 'countries', id: featureId }, { selected: false });
-        selectedFeatureId = null;
-        selectedFeatureName = null;
-      }
-      handleCountryConfirmed(feature);
+      cancelPendingDeselect();
+      setSelected(null);
+      onConfirm(featureId);
       return;
     }
 
@@ -88,82 +106,22 @@ export function initEventHandling(map, statusEl) {
       // Clicking the already-selected country, but not fast enough to
       // be a double-click. Don't deselect yet — give it a moment in
       // case a follow-up click arrives to confirm it instead.
-      if (pendingDeselectTimer) clearTimeout(pendingDeselectTimer); // shouldn't normally exist here, safety only
+      cancelPendingDeselect();
       pendingDeselectTimer = setTimeout(() => {
-        map.setFeatureState({ source: 'countries', id: featureId }, { selected: false });
-        if (selectedFeatureId === featureId) {
-          selectedFeatureId = null;
-          selectedFeatureName = null;
-        }
+        if (selectedFeatureId === featureId) setSelected(null);
         pendingDeselectTimer = null;
-        updateStatus();
       }, doubleClickWindowMs);
     } else {
       // Selecting a different/new country is unambiguous — do it
       // instantly, and drop any stale pending deselect for the
-      // previous selection (handleCountrySelected already clears its
-      // visual state).
-      if (pendingDeselectTimer) {
-        clearTimeout(pendingDeselectTimer);
-        pendingDeselectTimer = null;
-      }
-      handleCountrySelected(feature);
+      // previous selection.
+      cancelPendingDeselect();
+      setSelected(featureId);
     }
 
     lastClickFeatureId = featureId;
     lastClickTime = now;
   });
-
-  function handleCountrySelected(feature) {
-    const featureId = feature.id;
-
-    if (selectedFeatureId !== null) {
-      map.setFeatureState({ source: 'countries', id: selectedFeatureId }, { selected: false });
-    }
-
-    map.setFeatureState({ source: 'countries', id: featureId }, { selected: true });
-    selectedFeatureId = featureId;
-    selectedFeatureName = countryName(feature);
-    updateStatus();
-
-    // NOTE: this dataset does NOT automatically group a country with
-    // its overseas territories the way we did for the SVG version
-    // (e.g. clicking French Guiana here selects only French Guiana,
-    // not "France" as a whole). Each feature has a SOV_A3 property
-    // that identifies the sovereign state a territory belongs to,
-    // which could be used to re-implement that grouping behavior the
-    // same way we grouped Alaska/French Guiana before, if you want
-    // that back — just ask and I'll wire it up.
-  }
-
-  function handleCountryConfirmed(feature) {
-    const featureId = feature.id;
-
-    if (confirmedFeatureIds.has(featureId)) {
-      // double-clicking an already-confirmed country un-confirms it
-      map.setFeatureState({ source: 'countries', id: featureId }, { confirmed: false });
-      confirmedFeatureIds.delete(featureId);
-    } else {
-      map.setFeatureState({ source: 'countries', id: featureId }, { confirmed: true });
-      confirmedFeatureIds.add(featureId);
-    }
-    updateStatus();
-  }
-
-  function countryName(feature) {
-    return feature.properties.ADMIN || feature.properties.NAME || '(unnamed)';
-  }
-
-  function updateStatus() {
-    const parts = [];
-    if (selectedFeatureName !== null) {
-      parts.push(`Selected: ${selectedFeatureName}`);
-    }
-    if (confirmedFeatureIds.size > 0) {
-      parts.push(`${confirmedFeatureIds.size} confirmed`);
-    }
-    statusEl.textContent = parts.length > 0 ? parts.join(' · ') : 'Nothing selected.';
-  }
 
   // Pointer and fill-color feedback on hover. mousemove (rather than
   // mouseenter) is needed so moving directly from one country to a
@@ -188,7 +146,7 @@ export function initEventHandling(map, statusEl) {
       setHovered(null);
       return;
     }
-    map.getCanvas().style.cursor = 'pointer';
+    map.getCanvas().style.cursor = locked ? '' : 'pointer';
     setHovered(feature.id);
   });
   map.on('mouseleave', INTERACTIVE_LAYERS, () => {
@@ -196,5 +154,15 @@ export function initEventHandling(map, statusEl) {
     setHovered(null);
   });
 
-  console.log('Map loaded. Click a country to highlight it, double-click to confirm it.');
+  return {
+    clearSelection() {
+      cancelPendingDeselect();
+      lastClickFeatureId = null;
+      lastClickTime = 0;
+      setSelected(null);
+    },
+    setLocked(value) {
+      locked = value;
+    }
+  };
 }

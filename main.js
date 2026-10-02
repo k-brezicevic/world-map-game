@@ -15,7 +15,8 @@ additional detail while zooming in.
 import { adjust } from './adjust.js';
 import { initSettings } from './settings.js';
 import { initPanel } from './panels.js';
-import { initEventHandling, isInteractive } from './handler.js';
+import { isInteractive } from './handler.js';
+import { startGame } from './game.js';
 
 const COUNTRIES_GEOJSON_URL =
   'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_10m_admin_0_countries.geojson';
@@ -121,13 +122,12 @@ async function main() {
   // Position of plus/minus zoom button controls.
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
-  // Listen to GeoJSON data loading events. Kept as a named reference
-  // so the same function can be passed to map.off() once loading is done.
-  const sourceDataListener = e => onSourceDataLoading(e, map, statusEl, sourceDataListener);
-  map.on('sourcedata', sourceDataListener);
-
-  // Initialize event handling after map instance is finished loading.
-  map.on('load', () => initEventHandling(map, statusEl));
+  // Start the game once the map has finished loading. It replaces the
+  // "Loading map data…" status with its own text.
+  map.on('load', () => startGame(map, countriesGeoJsonData, {
+    titleEl: document.querySelector('header h1'),
+    statusEl
+  }));
 
   // Error handling in case map loading fails.
   map.on('error', e => {
@@ -182,14 +182,6 @@ function setupSmoothScrollZoom(map) {
   }, { passive: false });
 }
 
-// Event which fires repeatedly while GeoJSON data is loading.
-function onSourceDataLoading(e, map, statusEl, listener) {
-  if (e.sourceId === 'countries' && e.isSourceLoaded) {
-    statusEl.textContent = '';
-    map.off('sourcedata', listener);
-  }
-}
-
 async function loadAndAdjustCountries(url) {
   const response = await fetch(url);
   if (!response.ok) {
@@ -218,17 +210,26 @@ function buildStyle(countriesData, lakesData) {
   // country markers.
   const countryColor = [
     'case',
-    ['boolean', ['feature-state', 'confirmed'], false],
-    getMapColor('--map-confirmed'),  // confirmed color (double-click) — a "definite" locked-in answer
+    ['boolean', ['feature-state', 'correct'], false],
+    getMapColor('--map-correct'),    // correct answer (green), and the right country after a wrong answer
+    ['boolean', ['feature-state', 'wrong'], false],
+    getMapColor('--map-wrong'),      // wrong answer: the country the player picked (red)
     ['boolean', ['feature-state', 'selected'], false],
     getMapColor('--map-selected'),   // selected color (single click) — currently highlighted
+    ['boolean', ['feature-state', 'found'], false],
+    getMapColor('--map-found'),      // answered correctly earlier this round (darker green)
+    ['boolean', ['feature-state', 'missed'], false],
+    getMapColor('--map-missed'),     // missed earlier this round (darker red)
     ['boolean', ['feature-state', 'hover'], false],
     getMapColor('--map-land-hover'), // hover color — only shown on otherwise unselected countries
     getMapColor('--map-land')        // default land color
   ];
 
-  // Zoom level from which small countries are big enough to see and
-  // click as their real shape, so their marker circles are hidden.
+  // Small-country marker circles appear only once the map is zoomed in to
+  // a region (at zoom 6 the view is about 16 degrees wide, e.g. central
+  // Italy), and hide again from the zoom level where small countries are
+  // big enough to see and click as their real shape.
+  const MARKER_MIN_ZOOM = 6;
   const MARKER_MAX_ZOOM = 12;
 
   return {
@@ -290,12 +291,12 @@ function buildStyle(countriesData, lakesData) {
         type: 'circle',
         source: 'countries',
         filter: ['==', ['geometry-type'], 'Point'],
+        minzoom: MARKER_MIN_ZOOM,
         maxzoom: MARKER_MAX_ZOOM,
         paint: {
           'circle-color': countryColor,
-          // Radius in pixels by zoom level: small at world view, growing a
-          // little as you zoom in.
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 1, 1.5, 6, 5],
+          // Radius in pixels.
+          'circle-radius': 5,
           'circle-stroke-color': getMapColor('--map-outline'),
           'circle-stroke-width': 1
         }
@@ -307,6 +308,7 @@ function buildStyle(countriesData, lakesData) {
         type: 'circle',
         source: 'countries',
         filter: ['==', ['geometry-type'], 'Point'],
+        minzoom: MARKER_MIN_ZOOM,
         maxzoom: MARKER_MAX_ZOOM,
         paint: {
           'circle-radius': 10,
