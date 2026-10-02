@@ -128,7 +128,8 @@ async function main() {
   map.on('load', () => startGame(map, countriesGeoJsonData, {
     titleEl: document.querySelector('header h1'),
     statusEl,
-    startButton: document.getElementById('start-button')
+    startButton: document.getElementById('start-button'),
+    scoreboard: document.getElementById('scoreboard')
   }));
 
   // Error handling in case map loading fails.
@@ -213,9 +214,11 @@ function buildStyle(countriesData, lakesData) {
   const countryColor = [
     'case',
     ['boolean', ['feature-state', 'correct'], false],
-    getMapColor('--map-correct'),    // correct answer (green), and the right country after a wrong answer
+    getMapColor('--map-correct'),    // asked-for country, found (green) — while the result is shown
     ['boolean', ['feature-state', 'wrong'], false],
-    getMapColor('--map-wrong'),      // wrong answer: the country the player picked (red)
+    getMapColor('--map-wrong'),      // asked-for country, missed (red) — while the result is shown
+    ['boolean', ['feature-state', 'picked'], false],
+    getMapColor('--map-selected'),   // the player's wrong pick (orange, like the selection) — while the result is shown
     ['boolean', ['feature-state', 'selected'], false],
     getMapColor('--map-selected'),   // selected color (single click) — currently highlighted
     ['boolean', ['feature-state', 'found'], false],

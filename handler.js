@@ -82,7 +82,11 @@ export function initEventHandling(map, { onConfirm }) {
     const feature = countryAt(e);
     if (!feature) return;
     const featureId = feature.id;
-    const now = Date.now();
+    // When the click actually happened, not when it's handled: if the
+    // browser is busy (e.g. redrawing the map after the first click),
+    // the second click can be handled late, and measuring handling times
+    // would then miss a genuine double-click.
+    const now = e.originalEvent ? e.originalEvent.timeStamp : performance.now();
     const doubleClickWindowMs = getDoubleClickDelay();
 
     const isDoubleClick =

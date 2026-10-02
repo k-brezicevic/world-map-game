@@ -14,8 +14,8 @@ retheme the map without touching main.js at all.
   --map-land-hover: #526a83;  /* fill of an unselected country under the mouse */
   --map-outline: #0f1720;     /* country border lines */
   --map-selected: #e8a33d;    /* single-click highlight (orange) */
-  --map-correct: #3fae5a;     /* correct answer (green) */
-  --map-wrong: #d0564e;       /* wrong answer: the country the player picked (red) */
+  --map-correct: #3fae5a;     /* asked-for country, found (green), while the result is shown */
+  --map-wrong: #d0564e;       /* asked-for country, missed (red), while the result is shown */
   --map-found: #2e7d45;       /* answered correctly earlier this round (darker green) */
   --map-missed: #94413c;      /* missed earlier this round (darker red) */
 }

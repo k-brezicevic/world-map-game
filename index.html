@@ -38,6 +38,34 @@
     <!-- Shown once the map has loaded; starts the game (game.js). -->
     <button id="start-button" type="button" hidden>Start</button>
 
+    <!-- Scoreboard, top-left of the page: correct answers, misses and
+         countries remaining in the current round. Shown once the game
+         starts; the numbers are filled in by game.js. -->
+    <div id="scoreboard" hidden>
+      <span class="score score-correct" title="Correct answers">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+             stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12.5l5 5L20 6.5"/>
+        </svg>
+        <span id="score-correct" aria-label="Correct answers">0</span>
+      </span>
+      <span class="score score-missed" title="Misses">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+             stroke-width="3" stroke-linecap="round">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+        <span id="score-missed" aria-label="Misses">0</span>
+      </span>
+      <span class="score score-remaining" title="Countries remaining">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>
+        </svg>
+        <span id="score-remaining" aria-label="Countries remaining">0</span>
+      </span>
+    </div>
+
     <!-- Buttons in the top-right corner of the page, each with a dropdown
          panel. Opening/closing is wired up in panels.js. -->
     <div id="header-tools">

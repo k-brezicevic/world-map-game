@@ -48,6 +48,66 @@ h1 {
   font-weight: 600;
 }
 
+/* Brief flash when the next country appears (added by game.js): the
+   name starts slightly enlarged, in the orange highlight colour with an
+   orange glow (three layers: tight and bright, medium, and wide and
+   soft), and settles to normal. The glow fades a little more slowly than the colour. */
+h1.flash {
+  animation: title-flash 1100ms ease-out;
+}
+
+@keyframes title-flash {
+  0% {
+    color: var(--map-selected);
+    transform: scale(1.15);
+    text-shadow:
+      0 0 4px rgba(232, 163, 61, 1),
+      0 0 14px rgba(232, 163, 61, 0.9),
+      0 0 32px rgba(232, 163, 61, 0.75);
+  }
+  45% {
+    color: var(--ink);
+    transform: scale(1);
+    text-shadow:
+      0 0 4px rgba(232, 163, 61, 0.7),
+      0 0 14px rgba(232, 163, 61, 0.6),
+      0 0 32px rgba(232, 163, 61, 0.45);
+  }
+  100% {
+    color: var(--ink);
+    transform: scale(1);
+    text-shadow:
+      0 0 4px rgba(232, 163, 61, 0),
+      0 0 14px rgba(232, 163, 61, 0),
+      0 0 32px rgba(232, 163, 61, 0);
+  }
+}
+
+/* Players who've asked their system to reduce motion get the colour and
+   glow, without the change in size. */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes title-flash {
+    0% {
+      color: var(--map-selected);
+      text-shadow:
+        0 0 6px rgba(232, 163, 61, 0.9),
+        0 0 22px rgba(232, 163, 61, 0.7);
+    }
+    45% {
+      color: var(--ink);
+      text-shadow:
+        0 0 6px rgba(232, 163, 61, 0.5),
+        0 0 22px rgba(232, 163, 61, 0.4);
+    }
+    100% {
+      color: var(--ink);
+      text-shadow:
+        0 0 6px rgba(232, 163, 61, 0),
+        0 0 22px rgba(232, 163, 61, 0);
+    }
+  }
+}
+
 #status {
   margin: 0;
   color: var(--muted);
@@ -115,6 +175,12 @@ main {
   header {
     text-align: left;
     padding-right: calc(1rem + 88px + 0.75rem);
+  }
+
+  /* Left-aligned title: grow the new-country flash from the left edge,
+     so the name doesn't shift sideways. */
+  header h1 {
+    transform-origin: left center;
   }
 
   /* "header" prefix: this must beat the #start-button rule further down. */
@@ -201,6 +267,86 @@ main {
 
 #start-button[hidden] {
   display: none;
+}
+
+/* Scoreboard, top-left of the page (mirroring the buttons on the right):
+   a raised pill, in the same lit-from-the-top-left style as the buttons,
+   holding three big numbers - correct (green tick), misses (red cross)
+   and countries remaining (globe). */
+#scoreboard {
+  position: absolute;
+  /* Centred vertically in the header, i.e. between the top of the page
+     and the top of the map. */
+  top: 50%;
+  transform: translateY(-50%);
+  left: 1rem;
+  z-index: 10; /* above the map */
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  height: 44px;
+  padding: 0 1rem;
+  background: linear-gradient(to bottom, var(--button-top), var(--panel));
+  border: 1px solid var(--button-outline);
+  border-top-color: var(--button-edge-light);
+  border-bottom-color: var(--button-edge-dark);
+  border-radius: 8px;
+  box-shadow:
+    3px 4px 10px rgba(0, 0, 0, 0.5),
+    1px 1px 2px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+#scoreboard[hidden] {
+  display: none;
+}
+
+.score {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink);
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums; /* digits don't jump as they change */
+}
+
+.score svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+/* Icon colours match the answer colours on the map (map-style.css). */
+.score-correct svg   { color: var(--map-correct); }
+.score-missed svg    { color: var(--map-wrong); }
+.score-remaining svg { color: var(--button-icon); }
+
+/* Wide windows: the scoreboard sits in the top-left corner, so keep the
+   centred title (long names like "Saint Vincent and the Grenadines")
+   clear of it on both sides, the same on the left and right so the
+   title stays centred on the page. */
+@media (min-width: 901px) {
+  header {
+    padding-left: 17rem;
+    padding-right: 17rem;
+  }
+}
+
+/* Narrower windows: no room for the scoreboard beside the title, so it
+   moves into the header under the title instead. */
+@media (max-width: 900px) {
+  #scoreboard {
+    position: static;
+    transform: none;
+    display: inline-flex;
+    margin-top: 0.6rem;
+  }
+
+  #scoreboard[hidden] {
+    display: none;
+  }
 }
 
 /* Zoom buttons: drop MapLibre's white box around the pair and show
