@@ -122,11 +122,13 @@ async function main() {
   // Position of plus/minus zoom button controls.
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
-  // Start the game once the map has finished loading. It replaces the
-  // "Loading map data…" status with its own text.
+  // Set up the game once the map has finished loading. It replaces the
+  // "Loading map data…" status with its own text and shows the Start
+  // button; the first country appears when the player presses it.
   map.on('load', () => startGame(map, countriesGeoJsonData, {
     titleEl: document.querySelector('header h1'),
-    statusEl
+    statusEl,
+    startButton: document.getElementById('start-button')
   }));
 
   // Error handling in case map loading fails.

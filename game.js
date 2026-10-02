@@ -1,7 +1,7 @@
 /*
 The game: shows the name of a country in the page title, waits for the
 player to double-click a country on the map, marks the answer and then
-moves on to the next country.
+moves on to the next country. It begins when the player presses Start.
 
 - Countries come in a random order without repeats; after all of them,
   a new round starts in a fresh order.
@@ -26,7 +26,14 @@ import { initEventHandling, isInteractive } from './handler.js';
 const CORRECT_PAUSE_MS = 1500;
 const WRONG_PAUSE_MS = 3000;
 
-export function startGame(map, countriesData, { titleEl, statusEl }) {
+/*
+Sets up the game once the map has loaded and shows the Start button;
+the first country appears when the player presses it.
+  titleEl:     the page title, which shows the country to find
+  statusEl:    the line under it (instructions and score)
+  startButton: the Start button (hidden until the game is ready)
+*/
+export function startGame(map, countriesData, { titleEl, statusEl, startButton }) {
   // One entry per country. Small countries also have a marker point with
   // the same name (see adjust.js), which is skipped here.
   const countries = countriesData.features
@@ -43,7 +50,17 @@ export function startGame(map, countriesData, { titleEl, statusEl }) {
   let correct = 0;
   let answered = 0;
 
-  nextCountry();
+  // Until Start is pressed, the map can be explored but not answered, and
+  // the header shows just the title and the Start button (the status line
+  // is hidden, so it doesn't leave an empty gap).
+  input.setLocked(true);
+  statusEl.hidden = true;
+  startButton.hidden = false;
+  startButton.addEventListener('click', () => {
+    startButton.hidden = true;
+    statusEl.hidden = false;
+    nextCountry();
+  }, { once: true });
 
   function nextCountry() {
     if (queue.length === 0) {

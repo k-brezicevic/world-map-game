@@ -116,11 +116,17 @@ main {
     text-align: left;
     padding-right: calc(1rem + 88px + 0.75rem);
   }
+
+  /* "header" prefix: this must beat the #start-button rule further down. */
+  header #start-button {
+    margin-left: 0; /* line up with the left-aligned title */
+  }
 }
 
-/* Raised button style, shared by the info and settings buttons and the
-   map's zoom in/out buttons (MapLibre's NavigationControl). The #map
+/* Raised button style, shared by the Start, info and settings buttons and
+   the map's zoom in/out buttons (MapLibre's NavigationControl). The #map
    prefix gives these rules enough specificity to override maplibre-gl.css. */
+#start-button,
 #info-button,
 #settings-button,
 #map .maplibregl-ctrl-group button {
@@ -149,6 +155,7 @@ main {
   cursor: pointer;
 }
 
+#start-button:hover,
 #info-button:hover,
 #info-button[aria-expanded="true"],
 #settings-button:hover,
@@ -160,6 +167,7 @@ main {
 
 /* Pressed: the gradient flips and the shadow tightens, and the button
    shifts down 1px, so it looks pushed in. */
+#start-button:active,
 #info-button:active,
 #settings-button:active,
 #map .maplibregl-ctrl-group button:not(:disabled):active {
@@ -170,11 +178,29 @@ main {
   transform: translateY(1px);
 }
 
+#start-button:focus-visible,
 #info-button:focus-visible,
 #settings-button:focus-visible,
 #map .maplibregl-ctrl-group button:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
+}
+
+/* Start button: a text button under the status line, centred, in the
+   shared raised style above. Hidden (by game.js) once the game starts. */
+#start-button {
+  width: auto;
+  height: 38px;
+  margin: 0.75rem auto 0;
+  padding: 0 1.75rem;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+#start-button[hidden] {
+  display: none;
 }
 
 /* Zoom buttons: drop MapLibre's white box around the pair and show
