@@ -20,6 +20,16 @@ import { initEventHandling, isInteractive } from './handler.js';
 const COUNTRIES_GEOJSON_URL =
   'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_10m_admin_0_countries.geojson';
 
+// A few large, well-known lakes, saved locally from Natural Earth's
+// ne_10m_lakes (the same detail level as the countries): the Great Lakes
+// (Superior, Michigan, Huron with Georgian Bay, Erie, Ontario, and Lake
+// Saint Clair between Huron and Erie), Lake Victoria and Lake Baikal.
+// The country shapes include most lakes as land (e.g. the Great Lakes are
+// part of the US and Canada), so the lakes are drawn on top in the ocean
+// colour. The Caspian Sea isn't in this data: the country shapes already
+// leave it out.
+const LAKES_GEOJSON_URL = 'data/lakes.geojson';
+
 document.addEventListener('DOMContentLoaded', main);
 
 async function main() {
@@ -32,6 +42,18 @@ async function main() {
   // Temporary status text for testing purposes.
   const statusEl = document.getElementById('status');
   statusEl.textContent = 'Loading map data…';
+
+  // Start the lakes download straight away so it runs in parallel with the
+  // countries. If it fails, the map still works, just without lakes.
+  const lakesPromise = fetch(LAKES_GEOJSON_URL)
+    .then(response => {
+      if (!response.ok) throw new Error(`Failed to load ${LAKES_GEOJSON_URL}: HTTP ${response.status}`);
+      return response.json();
+    })
+    .catch(err => {
+      console.warn('Lakes unavailable — showing the map without them.', err);
+      return null;
+    });
 
   let countriesGeoJsonData;
   try {
@@ -60,12 +82,14 @@ async function main() {
   };
   listCountries();
 
+  const lakesGeoJsonData = await lakesPromise;
+
   // Create new MapLibre map object.
   const map = new maplibregl.Map({
     // Name of <div> element that contains the map.
     container: 'map',
     // Builds JSON style specification, which tells MapLibre how to draw the map.
-    style: buildStyle(countriesGeoJsonData),
+    style: buildStyle(countriesGeoJsonData, lakesGeoJsonData),
     // Initial position: degrees longitude, degrees latitude.
     center: [0, 20],
     // Initial and lowest map zoom.
@@ -189,7 +213,7 @@ function getMapColor(varName) {
 /*
 Builds JSON style specification, which tells MapLibre how to draw the map.
 */
-function buildStyle(countriesData) {
+function buildStyle(countriesData, lakesData) {
   // Country colour by state, shared by the country shapes and the small
   // country markers.
   const countryColor = [
@@ -218,7 +242,8 @@ function buildStyle(countriesData) {
         // adjust.js) then share one id, so hovering, selecting or
         // confirming either one colours both.
         promoteId: 'ADMIN'
-      }
+      },
+      ...(lakesData ? { lakes: { type: 'geojson', data: lakesData } } : {})
     },
     layers: [
       {
@@ -237,6 +262,18 @@ function buildStyle(countriesData) {
           'fill-opacity': 1
         }
       },
+      // Lakes in the ocean colour, over the country fill but under the
+      // border lines, so borders running through lakes (e.g. US–Canada
+      // across the Great Lakes) stay visible. Clicks on a lake are
+      // ignored (see handler.js).
+      ...(lakesData ? [{
+        id: 'lakes',
+        type: 'fill',
+        source: 'lakes',
+        paint: {
+          'fill-color': getMapColor('--map-background')
+        }
+      }] : []),
       {
         id: 'countries-outline',
         type: 'line',

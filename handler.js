@@ -37,10 +37,23 @@ export function initEventHandling(map, statusEl) {
   let lastClickTime = 0;
   let pendingDeselectTimer = null;
 
-  map.on('click', INTERACTIVE_LAYERS, e => {
-    if (!e.features || e.features.length === 0) return;
+  // Lakes are drawn on top of the country shapes, which include them as
+  // land. A click or hover on a lake shouldn't count as the country under
+  // it (a small-country marker still wins, being drawn above the lakes).
+  const isOnLake = e =>
+    Boolean(map.getLayer('lakes')) &&
+    map.queryRenderedFeatures(e.point, { layers: ['lakes'] }).length > 0;
+
+  const countryAt = e => {
+    if (!e.features || e.features.length === 0) return null;
     const feature = e.features[0];
-    if (!isInteractive(feature)) return;
+    if (feature.layer.id === 'countries-fill' && isOnLake(e)) return null;
+    return isInteractive(feature) ? feature : null;
+  };
+
+  map.on('click', INTERACTIVE_LAYERS, e => {
+    const feature = countryAt(e);
+    if (!feature) return;
     const featureId = feature.id;
     const now = Date.now();
     const doubleClickWindowMs = getDoubleClickDelay();
@@ -169,9 +182,8 @@ export function initEventHandling(map, statusEl) {
   };
 
   map.on('mousemove', INTERACTIVE_LAYERS, e => {
-    if (!e.features || e.features.length === 0) return;
-    const feature = e.features[0];
-    if (!isInteractive(feature)) {
+    const feature = countryAt(e);
+    if (!feature) {
       map.getCanvas().style.cursor = '';
       setHovered(null);
       return;
