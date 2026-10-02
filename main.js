@@ -47,10 +47,11 @@ async function main() {
   // currently in the loaded data — i.e. after adjust.js has already
   // run, so this reflects exactly what's on the map right now. Useful
   // for spotting other entries worth merging or excluding. Non-selectable
-  // features (e.g. Antarctica) are left out.
+  // features (e.g. Antarctica) and the extra marker points of small
+  // countries (which would list them twice) are left out.
   window.listCountries = () => {
     const names = countriesGeoJsonData.features
-      .filter(isInteractive)
+      .filter(f => isInteractive(f) && f.geometry.type !== 'Point')
       .map(f => f.properties.ADMIN || f.properties.NAME || '(unnamed)')
       .sort((a, b) => a.localeCompare(b));
     console.log(`${names.length} countries/territories currently on the map:`);
@@ -189,13 +190,34 @@ function getMapColor(varName) {
 Builds JSON style specification, which tells MapLibre how to draw the map.
 */
 function buildStyle(countriesData) {
+  // Country colour by state, shared by the country shapes and the small
+  // country markers.
+  const countryColor = [
+    'case',
+    ['boolean', ['feature-state', 'confirmed'], false],
+    getMapColor('--map-confirmed'),  // confirmed color (double-click) — a "definite" locked-in answer
+    ['boolean', ['feature-state', 'selected'], false],
+    getMapColor('--map-selected'),   // selected color (single click) — currently highlighted
+    ['boolean', ['feature-state', 'hover'], false],
+    getMapColor('--map-land-hover'), // hover color — only shown on otherwise unselected countries
+    getMapColor('--map-land')        // default land color
+  ];
+
+  // Zoom level from which small countries are big enough to see and
+  // click as their real shape, so their marker circles are hidden.
+  const MARKER_MAX_ZOOM = 12;
+
   return {
     version: 8,
     sources: {
       countries: {
         type: 'geojson',
         data: countriesData,
-        generateId: true
+        // Each feature's map id is its country name. A small country's
+        // shape and its marker circle (see addSmallCountryMarkers in
+        // adjust.js) then share one id, so hovering, selecting or
+        // confirming either one colours both.
+        promoteId: 'ADMIN'
       }
     },
     layers: [
@@ -211,16 +233,7 @@ function buildStyle(countriesData) {
         type: 'fill',
         source: 'countries',
         paint: {
-          'fill-color': [
-            'case',
-            ['boolean', ['feature-state', 'confirmed'], false],
-            getMapColor('--map-confirmed'),  // confirmed color (double-click) — a "definite" locked-in answer
-            ['boolean', ['feature-state', 'selected'], false],
-            getMapColor('--map-selected'),   // selected color (single click) — currently highlighted
-            ['boolean', ['feature-state', 'hover'], false],
-            getMapColor('--map-land-hover'), // hover color — only shown on otherwise unselected countries
-            getMapColor('--map-land')        // default land color
-          ],
+          'fill-color': countryColor,
           'fill-opacity': 1
         }
       },
@@ -231,6 +244,36 @@ function buildStyle(countriesData) {
         paint: {
           'line-color': getMapColor('--map-outline'),
           'line-width': 0.6
+        }
+      },
+      // Small countries (e.g. Vatican City) shown as a circle, since
+      // their real shape is too tiny to see or click until zoomed far in.
+      {
+        id: 'countries-markers',
+        type: 'circle',
+        source: 'countries',
+        filter: ['==', ['geometry-type'], 'Point'],
+        maxzoom: MARKER_MAX_ZOOM,
+        paint: {
+          'circle-color': countryColor,
+          // Radius in pixels by zoom level: small at world view, growing a
+          // little as you zoom in.
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 1, 1.5, 6, 5],
+          'circle-stroke-color': getMapColor('--map-outline'),
+          'circle-stroke-width': 1
+        }
+      },
+      // Invisible, larger click/hover area around each marker circle,
+      // so the small circles are easy to hit.
+      {
+        id: 'countries-markers-hit',
+        type: 'circle',
+        source: 'countries',
+        filter: ['==', ['geometry-type'], 'Point'],
+        maxzoom: MARKER_MAX_ZOOM,
+        paint: {
+          'circle-radius': 10,
+          'circle-opacity': 0
         }
       }
     ]

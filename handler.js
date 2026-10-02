@@ -8,6 +8,12 @@ export function isInteractive(feature) {
   return !NON_INTERACTIVE_COUNTRIES.includes(feature.properties.ADMIN);
 }
 
+// Map layers that react to clicks and hover: the country shapes, and the
+// (invisible, slightly larger) click areas around small-country marker
+// circles. The marker layer is drawn on top, so where a marker overlaps a
+// bigger country (Vatican City inside Italy), the marker is the one hit.
+const INTERACTIVE_LAYERS = ['countries-fill', 'countries-markers-hit'];
+
 export function initEventHandling(map, statusEl) {
   let selectedFeatureId = null;       // orange — single-click, one at a time
   let selectedFeatureName = null;
@@ -31,7 +37,7 @@ export function initEventHandling(map, statusEl) {
   let lastClickTime = 0;
   let pendingDeselectTimer = null;
 
-  map.on('click', 'countries-fill', e => {
+  map.on('click', INTERACTIVE_LAYERS, e => {
     if (!e.features || e.features.length === 0) return;
     const feature = e.features[0];
     if (!isInteractive(feature)) return;
@@ -162,7 +168,7 @@ export function initEventHandling(map, statusEl) {
     }
   };
 
-  map.on('mousemove', 'countries-fill', e => {
+  map.on('mousemove', INTERACTIVE_LAYERS, e => {
     if (!e.features || e.features.length === 0) return;
     const feature = e.features[0];
     if (!isInteractive(feature)) {
@@ -173,7 +179,7 @@ export function initEventHandling(map, statusEl) {
     map.getCanvas().style.cursor = 'pointer';
     setHovered(feature.id);
   });
-  map.on('mouseleave', 'countries-fill', () => {
+  map.on('mouseleave', INTERACTIVE_LAYERS, () => {
     map.getCanvas().style.cursor = '';
     setHovered(null);
   });

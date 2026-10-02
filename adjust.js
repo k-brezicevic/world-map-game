@@ -1,7 +1,7 @@
 /*
 Adjusts the Natural Earth country data for the game: merges territories
 and disputed areas into countries, splits some out, removes others
-entirely and renames countries.
+entirely, renames countries and adds marker points for tiny countries.
 */
 export function adjust(geojson) {
     assignBaikonurToKazakhstan(geojson);
@@ -182,6 +182,7 @@ export function adjust(geojson) {
     }
 
     renameCountries(geojson);
+    addSmallCountryMarkers(geojson);
 
     return geojson;
 
@@ -369,6 +370,38 @@ function removeCountries(geojson) {
     in the game. Both ADMIN and NAME are updated, since either can be
     used for display.
 */
+/*
+    Adds a marker point for countries too small to see or click on a
+    world map. main.js draws these points as small circles, and they act
+    as the country itself: the point copies the country's properties, so
+    it shares the country's map id (its ADMIN name) and its colouring.
+    Placed at the centre of the country's bounding box.
+*/
+function addSmallCountryMarkers(geojson) {
+    const SMALL_COUNTRIES = ['Vatican'];
+
+    for (const name of SMALL_COUNTRIES) {
+        const country = geojson.features.find(f => f.properties.ADMIN === name);
+        if (!country) {
+            console.warn(`Could not add a marker for ${name} — country not found.`);
+            continue;
+        }
+        let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+        const polygons = country.geometry.type === 'Polygon'
+            ? [country.geometry.coordinates]
+            : country.geometry.coordinates;
+        polygons.forEach(polygon => polygon[0].forEach(([lng, lat]) => {
+            minLng = Math.min(minLng, lng); maxLng = Math.max(maxLng, lng);
+            minLat = Math.min(minLat, lat); maxLat = Math.max(maxLat, lat);
+        }));
+        geojson.features.push({
+            type: 'Feature',
+            properties: { ...country.properties },
+            geometry: { type: 'Point', coordinates: [(minLng + maxLng) / 2, (minLat + maxLat) / 2] }
+        });
+    }
+}
+
 function renameCountries(geojson) {
     const RENAMES = {
         'eSwatini': 'Eswatini',
