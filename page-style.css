@@ -214,7 +214,14 @@ main {
   --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
 }
 
-/* Dropdown panels (info and settings). */
+/* Dropdown panels (info and settings), in the same raised style as the
+   buttons, lit from the top-left:
+   - gradient fill, lighter at the top and fading to the panel colour
+     over the first 160px (so a tall panel isn't dark all the way down);
+   - bevelled outline: lighter top edge, darker bottom edge;
+   - a drop shadow falling to the bottom-right (wider than the buttons'
+     since the panel floats higher), plus a faint highlight line just
+     inside the top edge. */
 #info-panel,
 #settings-panel {
   position: absolute;
@@ -223,10 +230,16 @@ main {
   width: 260px;
   max-width: calc(100vw - 2rem);
   padding: 1rem;
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: linear-gradient(to bottom, var(--button-top), var(--panel) 160px);
+  border: 1px solid var(--button-outline);
+  border-top-color: var(--button-edge-light);
+  border-bottom-color: var(--button-edge-dark);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    6px 10px 24px rgba(0, 0, 0, 0.5),
+    3px 4px 10px rgba(0, 0, 0, 0.4),
+    1px 1px 2px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 #info-panel[hidden],
