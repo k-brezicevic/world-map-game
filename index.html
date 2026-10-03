@@ -38,6 +38,13 @@
     <!-- Shown once the map has loaded; starts the game (game.js). -->
     <button id="start-button" type="button" hidden>Start</button>
 
+    <!-- During a game: skip the country (it comes back at the end), or
+         give up on it (counts as a miss). Wired up in game.js. -->
+    <div id="game-buttons" hidden>
+      <button id="skip-button" type="button">Skip</button>
+      <button id="dont-know-button" type="button">Don't know</button>
+    </div>
+
     <!-- Scoreboard, top-left of the page: correct answers, misses and
          countries remaining in the current round. Shown once the game
          starts; the numbers are filled in by game.js. -->
@@ -134,7 +141,7 @@
         <div class="results-card" role="dialog" aria-labelledby="results-heading">
           <h2 id="results-heading">Game complete</h2>
           <p id="results-percent" class="results-percent">0%</p>
-          <p id="results-detail" class="results-detail">0 out of 0 countries</p>
+          <p class="results-detail"><span id="results-found">0</span> out of <span id="results-total">0</span> countries</p>
           <div class="results-counts">
             <span class="score score-correct" title="Correct answers">
               <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"

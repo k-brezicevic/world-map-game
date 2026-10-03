@@ -16,8 +16,13 @@ moves on to the next country. It begins when the player presses Start.
   orange (the selection colour) to show where they clicked. If the
   asked-for country is off-screen, the map pans to it; if it's too small
   to see, a ring marks where it is (flashing green, then red).
-- Clicks are ignored while a result is shown, then the next country
-  appears.
+- For territories, an info icon after the name shows whose they are on
+  hover or click ("Territory of Denmark" for Greenland).
+- Under the country name: "Skip" puts the country at the end of the list
+  (it comes back after all the others), and "I don't know" counts it as
+  a miss, revealed like a wrong answer.
+- Clicks (and those buttons) are ignored while a result is shown, then
+  the next country appears.
 - The scoreboard (top-left) shows the number of correct answers, misses
   and countries remaining in the game.
 - Answered countries keep their colour (slightly darker) for the rest of
@@ -46,18 +51,33 @@ const WRONG_PAUSE_MS = 1500;
 const BLINK_COUNT = 3;
 const BLINK_MS = 150;
 
+// Countries in the game that are territories of another state. While one
+// is being asked, a small info icon after its name shows "Territory of
+// <state>" on hover or click (see territoryInfo). Kept as an explicit list
+// rather than read from the map data's SOVEREIGNT field, which would also
+// label e.g. Palestine (as Israel).
+const TERRITORY_OF = {
+  'Greenland': 'Denmark',
+  'Puerto Rico': 'the United States',
+  'Falkland Islands': 'the United Kingdom',
+  'French Guiana': 'France',
+  'New Caledonia': 'France'
+};
+
 /*
 Sets up the game once the map has loaded and shows the Start button;
 the first country appears when the player presses it.
   titleEl:     the page title, which shows the country to find
-  statusEl:    the line under it (the result, when the game ends)
+  statusEl:    the line under it (hidden during a game)
   startButton: the Start button (hidden until the game is ready); it
                returns as "Play again" when the game ends
   scoreboard:  the top-left counters (#score-correct, #score-missed,
                #score-remaining), hidden until the game starts
   results:     the results card shown over the map when the game ends
+  gameButtons: the "Skip" (#skip-button) and "I don't know"
+               (#dont-know-button) buttons, shown during a game
 */
-export function startGame(map, countriesData, { titleEl, statusEl, startButton, scoreboard, results }) {
+export function startGame(map, countriesData, { titleEl, statusEl, startButton, scoreboard, results, gameButtons }) {
   // One entry per country. Small countries also have a marker point with
   // the same name (see adjust.js), which is skipped here.
   const countries = countriesData.features
@@ -76,12 +96,20 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
   const correctEl = scoreboard.querySelector('#score-correct');
   const missedEl = scoreboard.querySelector('#score-missed');
   const remainingEl = scoreboard.querySelector('#score-remaining');
+  const skipButton = gameButtons.querySelector('#skip-button');
+  const dontKnowButton = gameButtons.querySelector('#dont-know-button');
+
+  // "Skip": the current country goes to the end of the list and comes
+  // back after all the others. "I don't know": counts as a miss, shown
+  // like a wrong answer (without a wrong pick).
+  skipButton.addEventListener('click', skipCountry);
+  dontKnowButton.addEventListener('click', () => answer(null));
 
   // Until Start is pressed, the map can be explored but not answered, and
   // the header shows just the title and the Start button (the status line
   // is hidden, so it doesn't leave an empty gap). The same button returns
   // as "Play again" when a game ends.
-  input.setLocked(true);
+  setAnswering(false);
   statusEl.hidden = true;
   startButton.hidden = false;
   startButton.addEventListener('click', newGame);
@@ -107,12 +135,16 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     preAnswerForTesting();
     hideResults();
     startButton.hidden = true;
-    statusEl.textContent = '';
-    statusEl.hidden = false;
+    // During a game the line under the title is replaced by the Skip and
+    // "I don't know" buttons.
+    statusEl.hidden = true;
+    gameButtons.hidden = false;
     scoreboard.hidden = false;
     nextCountry();
   }
 
+  // The queue is in random order and is taken from its end (pop), so its
+  // start is "the end of the list".
   function nextCountry() {
     if (queue.length === 0) {
       finishGame();
@@ -120,9 +152,25 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     }
     target = queue.pop();
     titleEl.textContent = target;
+    if (TERRITORY_OF[target]) titleEl.append(territoryInfo(`Territory of ${TERRITORY_OF[target]}`));
     flashTitle();
     updateScoreboard();
-    input.setLocked(false);
+    setAnswering(true);
+  }
+
+  // Puts the current country at the end of the list and moves on.
+  function skipCountry() {
+    input.clearSelection();
+    queue.unshift(target);
+    nextCountry();
+  }
+
+  // Whether the player can answer now (map and buttons), or not (e.g.
+  // while a result is shown). Skip also needs another country to skip to.
+  function setAnswering(enabled) {
+    input.setLocked(!enabled);
+    dontKnowButton.disabled = !enabled;
+    skipButton.disabled = !enabled || queue.length === 0;
   }
 
   // TESTING ONLY: open the page with ?skip=N in the address (e.g.
@@ -153,6 +201,7 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     titleEl.textContent = 'World Map Game';
     statusEl.textContent = '';
     statusEl.hidden = true;
+    gameButtons.hidden = true;
     updateScoreboard();
     // Stays under the title, for when the results card has been closed.
     startButton.textContent = 'Play again';
@@ -163,8 +212,9 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
   // Results card over the map (see #results in index.html).
   function showResults(percent) {
     results.querySelector('#results-percent').textContent = `${percent}%`;
-    results.querySelector('#results-detail').textContent =
-      `${correct} out of ${names.length} countries`;
+    // "<found> out of <total> countries"
+    results.querySelector('#results-found').textContent = correct;
+    results.querySelector('#results-total').textContent = names.length;
     results.querySelector('#results-correct').textContent = correct;
     results.querySelector('#results-missed').textContent = missed;
     results.hidden = false;
@@ -175,8 +225,10 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     results.hidden = true;
   }
 
+  // guess: the country the player double-clicked, or null for "I don't
+  // know" (a miss, shown the same way but without a wrong pick).
   function answer(guess) {
-    input.setLocked(true);
+    setAnswering(false);
     input.clearSelection();
 
     const isCorrect = guess === target;
@@ -185,7 +237,7 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
       setResult(target, { correct: true });
     } else {
       missed++;
-      setResult(guess, { picked: true });
+      if (guess) setResult(guess, { picked: true });
       showIfOffScreen(target);
       flashThenRed(target, tinyCountryCentre(target));
     }
@@ -197,7 +249,7 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
       // the rest of the game (same colour, slightly darker); the wrong
       // pick goes back to normal.
       setResult(shown, { correct: false, wrong: false, found: isCorrect, missed: !isCorrect });
-      if (!isCorrect) setResult(guess, { picked: false });
+      if (guess && !isCorrect) setResult(guess, { picked: false });
       setRing(null);
       nextCountry();
     }, isCorrect ? CORRECT_PAUSE_MS : WRONG_PAUSE_MS);
@@ -269,6 +321,28 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
       features: centre ? [{ type: 'Feature', properties: { colour }, geometry: { type: 'Point', coordinates: centre } }] : []
     });
   }
+}
+
+// Small "i" button placed after a territory's name in the title, with a
+// tooltip holding `text` (e.g. "Territory of Denmark"). The tooltip shows
+// on hover, and on click/tap (which focuses the button - needed on touch
+// screens); clicking elsewhere hides it again. Styles: .territory-info in
+// page-style.css.
+function territoryInfo(text) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'territory-info';
+  button.setAttribute('aria-label', text);
+  button.innerHTML =
+    '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle cx="12" cy="12" r="10"/><path d="M12 16v-5"/><path d="M12 8h.01"/></svg>';
+  const tip = document.createElement('span');
+  tip.className = 'territory-tip';
+  tip.setAttribute('role', 'tooltip');
+  tip.textContent = text;
+  button.append(tip);
+  return button;
 }
 
 // Countries smaller than this on screen (width or height, in pixels) get

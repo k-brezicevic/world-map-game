@@ -48,6 +48,76 @@ h1 {
   font-weight: 600;
 }
 
+/* Info icon after a territory's name in the title (added by game.js),
+   with a tooltip ("Territory of Denmark") shown on hover or when the icon
+   is clicked/tapped (focused). */
+.territory-info {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 0.4rem;
+  padding: 0;
+  vertical-align: -0.1em;
+  background: none;
+  border: none;
+  color: var(--button-icon);
+  font-family: inherit; /* buttons don't inherit the page font by default */
+  cursor: pointer;
+}
+
+.territory-info svg {
+  width: 18px;
+  height: 18px;
+}
+
+.territory-info:hover,
+.territory-info:focus {
+  color: var(--ink);
+}
+
+.territory-info:focus {
+  outline: none;
+}
+
+.territory-info:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+/* The tooltip: a small dark panel just to the right of the icon,
+   vertically centred on it. */
+.territory-tip {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 8px);
+  z-index: 20;
+  padding: 0.35rem 0.65rem;
+  white-space: nowrap;
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-shadow: none; /* not part of the title's flash glow */
+  background: var(--panel);
+  border: 1px solid var(--button-outline);
+  border-top-color: var(--button-edge-light);
+  border-radius: 6px;
+  box-shadow: 3px 4px 10px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(-4px);
+  transition: opacity 150ms ease-out, transform 150ms ease-out;
+}
+
+.territory-info:hover .territory-tip,
+.territory-info:focus .territory-tip {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
 /* Brief flash when the next country appears (added by game.js): the
    name starts slightly enlarged, in the orange highlight colour with an
    orange glow (three layers: tight and bright, medium, and wide and
@@ -183,9 +253,14 @@ main {
     transform-origin: left center;
   }
 
-  /* "header" prefix: this must beat the #start-button rule further down. */
+  /* "header" prefix: these must beat the #start-button and #game-buttons
+     rules further down. */
   header #start-button {
     margin-left: 0; /* line up with the left-aligned title */
+  }
+
+  header #game-buttons {
+    justify-content: flex-start; /* line up with the left-aligned title */
   }
 }
 
@@ -194,6 +269,7 @@ main {
    prefix gives these rules enough specificity to override maplibre-gl.css. */
 #start-button,
 .results-buttons button,
+#game-buttons button,
 #info-button,
 #settings-button,
 #map .maplibregl-ctrl-group button {
@@ -224,6 +300,7 @@ main {
 
 #start-button:hover,
 .results-buttons button:hover,
+#game-buttons button:hover,
 #info-button:hover,
 #info-button[aria-expanded="true"],
 #settings-button:hover,
@@ -237,6 +314,7 @@ main {
    shifts down 1px, so it looks pushed in. */
 #start-button:active,
 .results-buttons button:active,
+#game-buttons button:active,
 #info-button:active,
 #settings-button:active,
 #map .maplibregl-ctrl-group button:not(:disabled):active {
@@ -249,6 +327,7 @@ main {
 
 #start-button:focus-visible,
 .results-buttons button:focus-visible,
+#game-buttons button:focus-visible,
 #info-button:focus-visible,
 #settings-button:focus-visible,
 #map .maplibregl-ctrl-group button:focus-visible {
@@ -271,6 +350,37 @@ main {
 
 #start-button[hidden] {
   display: none;
+}
+
+/* Skip / "I don't know" buttons under the country name during a game:
+   text buttons, a little smaller than Start so the header stays compact. */
+#game-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+#game-buttons[hidden] {
+  display: none;
+}
+
+#game-buttons button {
+  width: auto;
+  height: 34px;
+  padding: 0 1.1rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Disabled while a result is shown (and Skip when no other country is
+   left): faded, and not reacting to hover or clicks. */
+#game-buttons button:disabled {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
 }
 
 /* Results card buttons: text buttons like Start, side by side. */
@@ -360,6 +470,9 @@ main {
 /* The card: same raised style as the info and settings panels. */
 .results-card {
   width: min(340px, 100%);
+  /* Sits a little above the centre of the map: the bottom margin pushes
+     the centred card up by half its size. */
+  margin-bottom: 14vh;
   padding: 1.5rem 1.5rem 1.25rem;
   text-align: center;
   background: linear-gradient(to bottom, var(--button-top), var(--panel) 160px);
@@ -394,10 +507,15 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
+/* "148 out of 202 countries": small uppercase caption under the big
+   number, matching the "Game complete" heading above it. */
 .results-detail {
-  margin: 0.2rem 0 0;
-  color: #a7b2be;
-  font-size: 0.95rem;
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* Correct / missed counts, styled like the scoreboard's. */

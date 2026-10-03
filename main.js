@@ -130,7 +130,8 @@ async function main() {
     statusEl,
     startButton: document.getElementById('start-button'),
     scoreboard: document.getElementById('scoreboard'),
-    results: document.getElementById('results')
+    results: document.getElementById('results'),
+    gameButtons: document.getElementById('game-buttons')
   }));
 
   // Error handling in case map loading fails.
