@@ -111,17 +111,18 @@ async function main() {
   });
 
   // Scroll-wheel zoom: MapLibre's built-in version is replaced with a
-  // smoother one that glides like the +/- buttons (see setupSmoothScrollZoom).
+  // smoother one that glides like the +/- keys (see setupSmoothScrollZoom).
   map.scrollZoom.disable();
   setupSmoothScrollZoom(map);
 
-  // Keep the map north-up: no two-finger twist on touchscreens and no
-  // Shift + arrow keys rotation. Pinch-zoom and arrow-key panning still work.
+  // Keep the map north-up: no two-finger twist on touchscreens.
+  // Pinch-zoom still works.
   map.touchZoomRotate.disableRotation();
-  map.keyboard.disableRotation();
 
-  // Position of plus/minus zoom button controls.
-  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+  // Keyboard: MapLibre's own handler only works while the map has focus,
+  // so it's replaced by a page-wide one (no rotation either).
+  map.keyboard.disable();
+  setupKeyboardNavigation(map);
 
   // Set up the game once the map has finished loading. It replaces the
   // "Loading map data…" status with its own text and shows the Start
@@ -142,15 +143,107 @@ async function main() {
   });
 }
 
+// Keyboard zoom and pan that work wherever the focus is on the page, not
+// only when the map has it: + / = zoom in, - zoom out, arrow keys pan.
+// Movement is continuous: while a key is held the map speeds up smoothly
+// to a steady speed, and eases to a stop when it's released (a quick tap
+// gives a small step). The keyboard's own auto-repeat is ignored. Several
+// keys can be held at once (e.g. two arrows move diagonally).
+// Keys are left alone when they belong to something else: form fields
+// (e.g. the double-click slider, where arrows change the value), the info
+// panel's tabs (arrows switch tabs), and combinations with Ctrl / Cmd /
+// Alt (e.g. Ctrl + - is the browser's own zoom). Arrow keys don't scroll
+// the page.
+function setupKeyboardNavigation(map) {
+  const PAN_SPEED = 700;     // pixels per second at full speed
+  const ZOOM_SPEED = 2;      // zoom levels per second at full speed
+  const SPEED_UP_S = 0.08;   // how quickly it reaches full speed (smaller = faster)
+  const SLOW_DOWN_S = 0.15;  // how quickly it comes to a stop
+
+  // Direction each key pushes in: [x, y] for panning, z for zooming.
+  const KEYS = {
+    ArrowLeft: { x: -1 }, ArrowRight: { x: 1 },
+    ArrowUp: { y: -1 }, ArrowDown: { y: 1 },
+    '+': { z: 1 }, '=': { z: 1 },
+    '-': { z: -1 }, '_': { z: -1 }
+  };
+
+  // Held keys by physical key (e.code), with the direction worked out from the
+  // character they produced when pressed (e.key, which follows the keyboard
+  // layout). Releasing is matched by e.code, because e.key can change in
+  // between: press Shift + = for "+", let go of Shift first, and the key
+  // comes up as "=".
+  const held = new Map();
+  const velocity = { x: 0, y: 0, z: 0 };
+  let frame = null;
+  let lastTime = 0;
+
+  document.addEventListener('keydown', e => {
+    if (!(e.key in KEYS)) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target.closest('input, select, textarea, [contenteditable], [role="tab"]')) return;
+    e.preventDefault(); // e.g. arrows scrolling the page, also on auto-repeat
+    if (e.repeat) return;
+    held.set(e.code, KEYS[e.key]);
+    start();
+  });
+
+  document.addEventListener('keyup', e => held.delete(e.code));
+  // Keys released while another window had focus never send keyup.
+  window.addEventListener('blur', () => held.clear());
+
+  function start() {
+    if (frame !== null) return;
+    lastTime = performance.now();
+    frame = requestAnimationFrame(step);
+  }
+
+  function step(now) {
+    const dt = Math.min((now - lastTime) / 1000, 0.05); // seconds; capped after a stall
+    lastTime = now;
+
+    // Where each direction is being pushed by the keys held now.
+    const target = { x: 0, y: 0, z: 0 };
+    for (const d of held.values()) {
+      target.x += d.x || 0;
+      target.y += d.y || 0;
+      target.z += d.z || 0;
+    }
+
+    // Ease the current speed towards that: quickly when speeding up,
+    // a little more gently when slowing down.
+    for (const axis of ['x', 'y', 'z']) {
+      const goal = Math.max(-1, Math.min(1, target[axis]));
+      const tau = Math.abs(goal) > Math.abs(velocity[axis]) ? SPEED_UP_S : SLOW_DOWN_S;
+      velocity[axis] += (goal - velocity[axis]) * (1 - Math.exp(-dt / tau));
+    }
+
+    if (velocity.x || velocity.y) {
+      map.panBy([velocity.x * PAN_SPEED * dt, velocity.y * PAN_SPEED * dt], { duration: 0 });
+    }
+    if (velocity.z) {
+      map.setZoom(map.getZoom() + velocity.z * ZOOM_SPEED * dt);
+    }
+
+    const moving = Math.abs(velocity.x) + Math.abs(velocity.y) + Math.abs(velocity.z) > 0.001;
+    if (held.size > 0 || moving) {
+      frame = requestAnimationFrame(step);
+    } else {
+      velocity.x = velocity.y = velocity.z = 0;
+      frame = null;
+    }
+  }
+}
+
 // Smooth scroll-wheel zoom. Each wheel notch sets a target zoom level and
 // the map glides there with an eased animation, the same way the +/-
-// buttons do. Notches that arrive while it's still gliding add to the
+// keys do. Notches that arrive while it's still gliding add to the
 // same target, so fast scrolling keeps one continuous motion instead of
 // restarting with a jolt each time. Zooms towards the mouse pointer.
 function setupSmoothScrollZoom(map) {
   // Zoom levels per pixel of wheel movement. A typical mouse-wheel notch
   // is 100px, so 0.005 gives half a zoom level per notch (the +/-
-  // buttons do a whole level). Higher number means faster zoom.
+  // keys do a whole level). Higher number means faster zoom.
   const ZOOM_PER_PIXEL = 0.005;
   // Length of the glide after each notch, in milliseconds.
   const DURATION_MS = 350;

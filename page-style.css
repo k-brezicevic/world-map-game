@@ -271,15 +271,13 @@ main {
   }
 }
 
-/* Raised button style, shared by the Start, info and settings buttons and
-   the map's zoom in/out buttons (MapLibre's NavigationControl). The #map
-   prefix gives these rules enough specificity to override maplibre-gl.css. */
+/* Raised button style, shared by the Start, Skip / Don't know, results card,
+   info and settings buttons. */
 #start-button,
 .results-buttons button,
 #game-buttons button,
 #info-button,
-#settings-button,
-#map .maplibregl-ctrl-group button {
+#settings-button {
   display: grid;
   place-items: center;
   width: 40px;
@@ -311,8 +309,7 @@ main {
 #info-button:hover,
 #info-button[aria-expanded="true"],
 #settings-button:hover,
-#settings-button[aria-expanded="true"],
-#map .maplibregl-ctrl-group button:not(:disabled):hover {
+#settings-button[aria-expanded="true"] {
   color: var(--ink);
   background: linear-gradient(to bottom, var(--button-top-hover), var(--panel));
 }
@@ -323,8 +320,7 @@ main {
 .results-buttons button:active,
 #game-buttons button:active,
 #info-button:active,
-#settings-button:active,
-#map .maplibregl-ctrl-group button:not(:disabled):active {
+#settings-button:active {
   background: linear-gradient(to bottom, var(--panel), var(--button-top));
   box-shadow:
     1px 1px 2px rgba(0, 0, 0, 0.6),
@@ -336,8 +332,7 @@ main {
 .results-buttons button:focus-visible,
 #game-buttons button:focus-visible,
 #info-button:focus-visible,
-#settings-button:focus-visible,
-#map .maplibregl-ctrl-group button:focus-visible {
+#settings-button:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
@@ -464,7 +459,7 @@ main {
 #results {
   position: absolute;
   inset: 0;
-  z-index: 5; /* above the map, its controls and the inner-shadow overlay */
+  z-index: 5; /* above the map and the inner-shadow overlay */
   display: grid;
   place-items: center;
   padding: 1rem;
@@ -581,43 +576,6 @@ main {
   #scoreboard[hidden] {
     display: none;
   }
-}
-
-/* Zoom buttons: drop MapLibre's white box around the pair and show
-   them as two separate raised buttons, stacked with a gap. */
-#map .maplibregl-ctrl-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: none;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-/* Disabled (e.g. zoom-out at minimum zoom): MapLibre already fades the
-   icon; also drop the pointer cursor. */
-#map .maplibregl-ctrl-group button:disabled {
-  cursor: default;
-}
-
-/* MapLibre draws the +/- icons as dark background images, which can't
-   follow the text colour. Replace them with masks filled with
-   currentColor, so they match the gear icon (and brighten on hover). */
-#map .maplibregl-ctrl-group .maplibregl-ctrl-icon {
-  width: 20px;
-  height: 20px;
-  background-image: none;
-  background-color: currentColor;
-  -webkit-mask: var(--icon) center / contain no-repeat;
-  mask: var(--icon) center / contain no-repeat;
-}
-
-#map .maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon {
-  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
-}
-
-#map .maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon {
-  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
 }
 
 /* Dropdown panels (info and settings), in the same raised style as the
@@ -853,6 +811,13 @@ main {
 #double-click-delay-value {
   color: var(--ink);
   font-variant-numeric: tabular-nums;
+}
+
+/* No focus outline around the map when it's clicked: the keyboard
+   controls work without the map having focus (see main.js). */
+#map .maplibregl-canvas:focus,
+#map .maplibregl-canvas:focus-visible {
+  outline: none;
 }
 
 /* MapLibre needs its container to have an explicit height/width —
