@@ -481,9 +481,9 @@ main {
   z-index: 10; /* above the map */
   display: flex;
   align-items: center;
-  gap: 1rem; /* space before each divider; the same again after it (padding) */
+  gap: 0.7rem; /* space before each divider; the same again after it (padding) */
   height: 44px;
-  padding: 0 1rem;
+  padding: 0 0.8rem;
   background: linear-gradient(to bottom, var(--button-top), var(--panel));
   border: 1px solid var(--button-outline);
   border-top-color: var(--button-edge-light);
@@ -520,8 +520,14 @@ main {
 
 /* Thin engraved dividers between the scoreboard's counters: a dark line
    with a faint light line beside it, as if cut into the raised pill. */
+/* In the scoreboard the icon sits a little closer to its number, to keep
+   the pill compact; it only gets wider as the numbers gain digits. */
+#scoreboard .score {
+  gap: 0.3rem;
+}
+
 #scoreboard .score + .score {
-  padding-left: 1rem;
+  padding-left: 0.7rem;
   border-left: 1px solid rgba(0, 0, 0, 0.45);
   box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.05);
 }
