@@ -10,7 +10,7 @@
        mode") that the page is designed for dark, so it isn't inverted. -->
 <meta name="darkreader-lock">
 <meta name="color-scheme" content="dark">
-<title>Country Click Game — Prototype</title>
+<title>Clickland</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 
 <!-- MapLibre GL JS — pinned to 5.6.1 (last pre-v6 release using the
@@ -37,7 +37,7 @@
          its own: it drops onto the tile and bounces once the map has loaded,
          see game.js). Clicking it opens the About panel (panels.js). -->
     <div id="about">
-      <button id="logo" type="button" aria-label="About World Map Game"
+      <button id="logo" type="button" aria-label="About Clickland"
               aria-expanded="false" aria-controls="about-panel">
         <svg viewBox="73 101 900 900" aria-hidden="true">
           <defs>
@@ -79,8 +79,9 @@
       </div>
     </div>
 
-    <!-- Replaced by the country to find once the game starts (game.js). -->
-    <h1>World Map Game</h1>
+    <!-- Replaced by the country to find once the game starts (game.js).
+         "brand": the game's name, styled like the logo (page-style.css). -->
+    <h1 class="brand">Clickland</h1>
     <p id="status">Loading map data…</p>
     <!-- Shown once the map has loaded; starts the game (game.js). -->
     <button id="start-button" type="button" hidden>Start</button>

@@ -7,7 +7,7 @@ moves on to the next country. It begins when the player presses Start.
   the game ends: a results card over the map shows the percentage
   answered correctly and the counts, with "Play again" and "View map"
   buttons. The scoreboard and map colours stay as they are, and the
-  title goes back to "World Map Game" with a "Play again" button under
+  title goes back to "Clickland" with a "Play again" button under
   it (for when the card has been closed). A new game uses a fresh order.
 - Final colours: green = asked for and found, red = asked for and missed.
 - Correct answer: the country turns green.
@@ -153,7 +153,7 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     gameButtons.hidden = false;
     scoreboard.hidden = false;
     updateScoreboard();
-    // The "World Map Game" title shrinks and fades out (h1.vanish in
+    // The "Clickland" title shrinks and fades out (h1.vanish in
     // page-style.css; cleared when it ends, see below). Meanwhile, a short
     // pause before the first country, with answering (map and buttons)
     // locked.
@@ -219,7 +219,11 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     const percent = Math.round(correct / names.length * 100);
     // Back to the game's name, as before the first game (the result is on
     // the results card).
-    titleEl.textContent = 'World Map Game';
+    // Any fade-out of the last country still running is cancelled first;
+    // otherwise it would carry over to the name and clear it when it ends.
+    titleEl.classList.remove('flash', 'vanish');
+    titleEl.textContent = 'Clickland';
+    titleEl.classList.add('brand');
     statusEl.textContent = '';
     statusEl.hidden = true;
     gameButtons.hidden = true;
@@ -310,10 +314,12 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
   // slightly less crisply, so the name goes back to normal text afterwards.
   // Once the title has vanished, it's cleared to an invisible space (which
   // keeps the line's height, so nothing below it moves) until the first
-  // country appears.
+  // country appears. The game's name vanishes with brand-vanish and also
+  // drops its logo style ("brand"), so country names show in the normal one.
   titleEl.addEventListener('animationend', e => {
     if (e.animationName === 'title-flash') titleEl.classList.remove('flash');
-    if (e.animationName === 'title-vanish') {
+    if (e.animationName === 'title-vanish' || e.animationName === 'brand-vanish') {
+      titleEl.classList.remove('brand');
       titleEl.textContent = ' ';
       titleEl.classList.remove('vanish');
     }

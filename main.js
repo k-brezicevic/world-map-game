@@ -1,5 +1,5 @@
 /*
-World Map Game — based on MapLibre mapping library.
+Clickland — based on MapLibre mapping library.
 
 It renders country polygons from a public-domain GeoJSON dataset 
 (Natural Earth, via jsDelivr CDN) using MapLibre's WebGL renderer.
