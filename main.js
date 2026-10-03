@@ -340,12 +340,38 @@ function buildStyle(countriesData, lakesData) {
     getMapColor('--map-land')        // default land color
   ];
 
-  // Small-country marker circles appear only once the map is zoomed in to
-  // a region (at zoom 6 the view is about 16 degrees wide, e.g. central
-  // Italy), and hide again from the zoom level where small countries are
-  // big enough to see and click as their real shape.
-  const MARKER_MIN_ZOOM = 6;
-  const MARKER_MAX_ZOOM = 12;
+  // Small-country circles (marker points, see addSmallCountryMarkers in
+  // adjust.js): active only while the country is still too tiny to click
+  // as its real shape, i.e. below its markerUntilZoom. MapLibre only lets
+  // a radius depend on the zoom through a top-level "step", so this
+  // checks each whole zoom level (from 0 to MARKER_LAST_ZOOM) and gives
+  // the radius there, or 0 (no circle) once the country is big enough.
+  const MARKER_LAST_ZOOM = 14;
+  const radiusWhileTiny = radiusPx => {
+    const steps = ['step', ['zoom'], ['case', ['>', ['get', 'markerUntilZoom'], 0.5], radiusPx, 0]];
+    for (let zoom = 1; zoom <= MARKER_LAST_ZOOM; zoom++) {
+      steps.push(zoom, ['case', ['>', ['get', 'markerUntilZoom'], zoom + 0.5], radiusPx, 0]);
+    }
+    return steps;
+  };
+
+  // The visible circle only shows when there's something to show: the
+  // country hovered (in the hovered-country colour), selected, or
+  // answered (green / red). An untouched small country has no circle,
+  // so the circles don't give away where the small countries are
+  // (except Vatican City, see countries-markers-always below).
+  const markerOpacity = [
+    'case',
+    ['any',
+      ['boolean', ['feature-state', 'correct'], false],
+      ['boolean', ['feature-state', 'wrong'], false],
+      ['boolean', ['feature-state', 'picked'], false],
+      ['boolean', ['feature-state', 'selected'], false],
+      ['boolean', ['feature-state', 'found'], false],
+      ['boolean', ['feature-state', 'missed'], false],
+      ['boolean', ['feature-state', 'hover'], false]], 1,
+    0
+  ];
 
   return {
     version: 8,
@@ -399,34 +425,75 @@ function buildStyle(countriesData, lakesData) {
           'line-width': 0.6
         }
       },
-      // Small countries (e.g. Vatican City) shown as a circle, since
-      // their real shape is too tiny to see or click until zoomed far in.
+      // The outline of the country under the mouse, in the selection orange
+      // and thicker, so it's clear exactly which country is hovered (e.g.
+      // between similar-sized neighbours). Only the hovered country's line
+      // shows (feature-state "hover", set in handler.js), and not once it's
+      // selected: the country is then orange all over anyway.
+      {
+        id: 'countries-hover-outline',
+        type: 'line',
+        source: 'countries',
+        paint: {
+          'line-color': getMapColor('--map-selected'), // the selection orange
+          'line-width': 1.5,
+          'line-opacity': [
+            'case',
+            ['all',
+              ['boolean', ['feature-state', 'hover'], false],
+              ['!', ['boolean', ['feature-state', 'selected'], false]]], 1,
+            0
+          ]
+        }
+      },
+      // Small countries (e.g. Vatican City, Nauru) shown as a circle in the
+      // country's colour while their real shape is too tiny to see: when
+      // hovered, selected or answered (see markerOpacity above).
       {
         id: 'countries-markers',
         type: 'circle',
         source: 'countries',
         filter: ['==', ['geometry-type'], 'Point'],
-        minzoom: MARKER_MIN_ZOOM,
-        maxzoom: MARKER_MAX_ZOOM,
         paint: {
           'circle-color': countryColor,
-          // Radius in pixels.
-          'circle-radius': 5,
+          'circle-radius': radiusWhileTiny(5), // pixels
+          'circle-opacity': markerOpacity,
+          'circle-stroke-color': getMapColor('--map-outline'),
+          'circle-stroke-width': 1,
+          'circle-stroke-opacity': markerOpacity
+        }
+      },
+      // Vatican City's circle is also always shown (in whatever colour the
+      // country has) once the map is zoomed in to a region (at zoom 6 the
+      // view is about 16 degrees wide, e.g. central Italy), until zoom 12,
+      // where its real shape starts to be visible.
+      {
+        id: 'countries-markers-always',
+        type: 'circle',
+        source: 'countries',
+        filter: ['all',
+          ['==', ['geometry-type'], 'Point'],
+          ['==', ['get', 'ADMIN'], 'Vatican']],
+        minzoom: 6,
+        maxzoom: 12,
+        paint: {
+          'circle-color': countryColor,
+          'circle-radius': 5, // pixels
           'circle-stroke-color': getMapColor('--map-outline'),
           'circle-stroke-width': 1
         }
       },
-      // Invisible, larger click/hover area around each marker circle,
-      // so the small circles are easy to hit.
+      // Invisible, slightly larger click/hover area around each small
+      // country, so it can be clicked without pixel-perfect aim. It sits
+      // above the country shapes, so inside it the small country wins
+      // over a larger neighbour.
       {
         id: 'countries-markers-hit',
         type: 'circle',
         source: 'countries',
         filter: ['==', ['geometry-type'], 'Point'],
-        minzoom: MARKER_MIN_ZOOM,
-        maxzoom: MARKER_MAX_ZOOM,
         paint: {
-          'circle-radius': 10,
+          'circle-radius': radiusWhileTiny(7), // pixels
           'circle-opacity': 0
         }
       }

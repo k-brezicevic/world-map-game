@@ -257,19 +257,6 @@ h1.vanish {
   }
 }
 
-/* Nunito ExtraBold (free, SIL Open Font License - see fonts/OFL.txt), for
-   the "Clickland" title. Stored in the project rather than loaded from
-   Google Fonts, and cut down to just the letters of "Clickland" (1.5 KB); any
-   other text would fall back to the next font in the list. "block": the
-   title waits (briefly) for the font instead of first showing in Arial. */
-@font-face {
-  font-family: "Nunito";
-  font-weight: 800;
-  font-style: normal;
-  font-display: block;
-  src: url("fonts/nunito-800-clickland.woff2") format("woff2");
-}
-
 /* The game's name ("Clickland", before and after a game), styled like the
    logo's pin: the same orange gradient (light at the top, darker at the
    bottom), bold and larger, with a thin dark edge and the usual drop
@@ -285,12 +272,10 @@ h1.brand {
      is exactly as tall as during a game. */
   margin-bottom: 0;
   vertical-align: top;
-  /* Nunito (@font-face above), rounded like the logo's tile and pin;
-     Helvetica or Arial if it can't load. Larger than the country names,
-     in the same line height (see h1). */
-  font-family: "Nunito", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* The page's own font, as for the country names, but larger, in the
+     same line height (see h1). */
   font-size: 1.8rem;
-  font-weight: 800;
+  font-weight: 700;
   background: linear-gradient(to bottom, #f6bd5d, #d98a20);
   -webkit-background-clip: text;
   background-clip: text;
@@ -321,7 +306,7 @@ h1.brand.vanish {
 }
 
 #status {
-  margin: 0;
+  margin: 0.7rem 0 0; /* a gap under the title */
   color: var(--muted);
   font-size: 0.95rem;
   min-height: 1.3em;
@@ -1008,6 +993,12 @@ main {
 /* A little space between consecutive paragraphs. */
 #about-panel p + p {
   margin-top: 0.5rem;
+}
+
+/* Highlighted words (e.g. a tab name) in white, like in the info panel. */
+#about-panel strong {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 #about-panel ul {

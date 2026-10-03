@@ -377,35 +377,65 @@ function removeCountries(geojson) {
     used for display.
 */
 /*
-    Adds a marker point for countries too small to see or click on a
-    world map. main.js draws these points as small circles, and they act
-    as the country itself: the point copies the country's properties, so
-    it shares the country's map id (its ADMIN name) and its colouring.
-    Placed at the centre of the country's bounding box.
+    Adds a marker point for every country that's too small to click on
+    the map at some zoom levels (e.g. Vatican, Monaco, Nauru, most
+    Caribbean islands; at world zoom also mid-sized ones like Belgium).
+    main.js gives these points a click circle, so the country can be
+    clicked there, and the point acts as the country itself: it copies
+    the country's properties, so it shares the country's map id (its
+    ADMIN name) and its colouring.
+
+    The point is placed inside the country's largest piece of land. Its
+    "markerUntilZoom" property is the zoom level at which that piece
+    grows to TINY_PX across on screen; below that zoom main.js keeps the
+    circle active, above it the real shape is big enough to click.
+    Countries already at least that big at the lowest zoom get no point.
 */
 function addSmallCountryMarkers(geojson) {
-    const SMALL_COUNTRIES = ['Vatican'];
+    const TINY_PX = 10;      // "too small to click": under this many pixels across
+    const MIN_ZOOM = 1;      // the map's lowest zoom (main.js)
+    const EARTH_KM = 40075;  // the equator's length
+    const WORLD_PX = 512;    // the world's width in pixels at zoom 0 (MapLibre)
 
-    for (const name of SMALL_COUNTRIES) {
-        const country = geojson.features.find(f => f.properties.ADMIN === name);
-        if (!country) {
-            console.warn(`Could not add a marker for ${name} — country not found.`);
-            continue;
-        }
-        let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
-        const polygons = country.geometry.type === 'Polygon'
+    const markers = [];
+    for (const country of geojson.features) {
+        if (country.geometry.type !== 'Polygon' && country.geometry.type !== 'MultiPolygon') continue;
+
+        // The largest piece of land, by area.
+        const pieces = country.geometry.type === 'Polygon'
             ? [country.geometry.coordinates]
             : country.geometry.coordinates;
-        polygons.forEach(polygon => polygon[0].forEach(([lng, lat]) => {
-            minLng = Math.min(minLng, lng); maxLng = Math.max(maxLng, lng);
-            minLat = Math.min(minLat, lat); maxLat = Math.max(maxLat, lat);
-        }));
-        geojson.features.push({
+        let piece = null;
+        let pieceKm2 = 0;
+        for (const coordinates of pieces) {
+            const polygon = turf.polygon(coordinates);
+            const km2 = turf.area(polygon) / 1e6;
+            if (km2 > pieceKm2) { piece = polygon; pieceKm2 = km2; }
+        }
+        if (!piece) continue;
+
+        // Its centre, or another point inside it if the centre falls
+        // outside (e.g. a crescent-shaped island).
+        let point = turf.centroid(piece);
+        if (!turf.booleanPointInPolygon(point, piece)) point = turf.pointOnFeature(piece);
+        const lat = point.geometry.coordinates[1];
+
+        // On-screen width at zoom z, in pixels: its width in km (taken as
+        // the square root of its area) divided by the km per pixel there,
+        // which halves with each zoom level and shrinks towards the poles
+        // (by cos(latitude), as the map stretches them).
+        const widthKm = Math.sqrt(pieceKm2);
+        const kmPerPxAtZoom0 = EARTH_KM * Math.cos(lat * Math.PI / 180) / WORLD_PX;
+        const markerUntilZoom = Math.log2(TINY_PX * kmPerPxAtZoom0 / widthKm);
+        if (markerUntilZoom <= MIN_ZOOM) continue;
+
+        markers.push({
             type: 'Feature',
-            properties: { ...country.properties },
-            geometry: { type: 'Point', coordinates: [(minLng + maxLng) / 2, (minLat + maxLat) / 2] }
+            properties: { ...country.properties, markerUntilZoom },
+            geometry: point.geometry
         });
     }
+    geojson.features.push(...markers);
 }
 
 function renameCountries(geojson) {
