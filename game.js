@@ -83,8 +83,10 @@ the first country appears when the player presses it.
   results:     the results card shown over the map when the game ends
   gameButtons: the "Skip" (#skip-button) and "I don't know"
                (#dont-know-button) buttons, shown during a game
+  logo:        the logo button (top-left), whose pin drops in once the
+               map has loaded
 */
-export function startGame(map, countriesData, { titleEl, statusEl, startButton, scoreboard, results, gameButtons }) {
+export function startGame(map, countriesData, { titleEl, statusEl, startButton, scoreboard, results, gameButtons, logo }) {
   // One entry per country. Small countries also have a marker point with
   // the same name (see adjust.js), which is skipped here.
   const countries = countriesData.features
@@ -120,6 +122,9 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
   statusEl.hidden = true;
   startButton.hidden = false;
   startButton.addEventListener('click', newGame);
+
+  // The map is ready: the logo's pin drops onto its tile.
+  dropPin();
 
   // Results card: "Play again" starts a new game; "View map", a click on
   // the dimmed map around the card, or Escape closes it to show the map.
@@ -291,6 +296,13 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     titleEl.classList.remove('flash', 'vanish');
     void titleEl.offsetWidth;
     titleEl.classList.add('vanish');
+  }
+
+  // The logo's pin drops onto its tile and bounces (see #logo.drop in
+  // page-style.css). Until then the pin is hidden, so the tile is empty
+  // while the map loads.
+  function dropPin() {
+    logo.classList.add('drop');
   }
 
   // Remove the class once the flash is over: during it the title is drawn

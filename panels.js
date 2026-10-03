@@ -1,6 +1,6 @@
 /*
-Dropdown panels opened by the buttons in the top-right corner of the page
-(the info "i" and the settings gear).
+Dropdown panels opened by the buttons in the corners of the page (the
+logo in the top-left; the info "i" and the settings gear in the top-right).
 
 Each panel opens and closes with its button, and closes on a click
 anywhere outside it or on Escape. Opening one panel closes the others,

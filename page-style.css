@@ -296,6 +296,60 @@ main {
   z-index: 1;
 }
 
+/* Loading spinner, in the middle of the map area until the map has
+   loaded: an orange arc (the game's highlight colour, like the logo's
+   pin) turning in a recessed ring, like the slider grooves. It fades out
+   when main.js adds the "done" class. */
+#map-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2; /* above the map and its edge shadow */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity 300ms ease, visibility 0s linear 300ms;
+}
+
+#map-loading.done {
+  opacity: 0;
+  visibility: hidden;
+}
+
+#map-loading .spinner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 4px solid var(--button-top-hover);
+  border-top-color: var(--map-selected);
+  box-shadow:
+    inset 0 2px 3px rgba(0, 0, 0, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.05);
+  filter: drop-shadow(0 0 4px rgba(232, 163, 61, 0.35));
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Reduced motion: keep turning (it shows the page is busy), slower. */
+@media (prefers-reduced-motion: reduce) {
+  #map-loading .spinner {
+    animation-duration: 2400ms;
+  }
+}
+
+/* Text for screen readers only. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 /* Info + settings buttons, side by side in the top-right of the page.
    Each wraps its button and dropdown panel; the panel opens below. */
 #header-tools {
@@ -467,6 +521,119 @@ main {
   letter-spacing: 0.02em;
 }
 
+/* Logo + About panel, top-left corner: the same size as the info and
+   settings buttons, centred vertically in the header like the scoreboard
+   beside it. */
+#about {
+  position: absolute;
+  top: 50%;
+  left: 1rem;
+  transform: translateY(-50%);
+  z-index: 11; /* above the map, and its panel above the scoreboard */
+  text-align: left;
+}
+
+/* The logo button (the favicon design, inline): the SVG draws its own
+   raised tile, so the button itself has no border or fill; the drop
+   shadow matches the other buttons'. Brightens a little on hover and
+   presses down when clicked, like them. */
+#logo {
+  display: block;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  filter:
+    drop-shadow(3px 4px 6px rgba(0, 0, 0, 0.45))
+    drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5));
+}
+
+#logo:hover {
+  filter:
+    brightness(1.15)
+    drop-shadow(3px 4px 6px rgba(0, 0, 0, 0.45))
+    drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5));
+}
+
+#logo:active {
+  transform: translate(1px, 1px);
+}
+
+#logo:focus {
+  outline: none;
+}
+
+#logo:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+#logo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible; /* the pin drops in from above the tile */
+}
+
+/* Drop-and-bounce of the pin once the map has loaded (class added by
+   game.js; until then the pin and its shadow are hidden, leaving an empty
+   tile while the map loads): it falls in from above, squashes on landing,
+   bounces twice and settles. Its shadow grows as it lands and shrinks
+   while it's in the air. Scaling is anchored at the pin's tip. Units are
+   the SVG's own (the tile is 900 wide), so -420px is about 20 screen
+   pixels. */
+#logo .logo-pin,
+#logo .logo-pin-shadow {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+#logo:not(.drop) .logo-pin,
+#logo:not(.drop) .logo-pin-shadow {
+  opacity: 0;
+}
+
+#logo .logo-pin-shadow {
+  transform-origin: 50% 50%;
+}
+
+#logo.drop .logo-pin {
+  animation: pin-drop 900ms both;
+}
+
+#logo.drop .logo-pin-shadow {
+  animation: pin-shadow 900ms both;
+}
+
+@keyframes pin-drop {
+  0%   { transform: translateY(-420px); opacity: 0; animation-timing-function: cubic-bezier(0.5, 0, 1, 1); }
+  12%  { opacity: 1; }
+  40%  { transform: translateY(0) scale(1.12, 0.82); animation-timing-function: cubic-bezier(0, 0, 0.4, 1); }
+  60%  { transform: translateY(-110px) scale(0.96, 1.05); animation-timing-function: cubic-bezier(0.6, 0, 1, 1); }
+  76%  { transform: translateY(0) scale(1.05, 0.94); animation-timing-function: cubic-bezier(0, 0, 0.4, 1); }
+  88%  { transform: translateY(-28px) scale(1); animation-timing-function: cubic-bezier(0.6, 0, 1, 1); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes pin-shadow {
+  0%   { transform: scale(0.3); opacity: 0; }
+  40%  { transform: scale(1.1); opacity: 1; }
+  60%  { transform: scale(0.75); }
+  76%  { transform: scale(1.03); }
+  88%  { transform: scale(0.93); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #logo.drop .logo-pin,
+  #logo.drop .logo-pin-shadow {
+    animation: none;
+  }
+}
+
 /* Scoreboard, top-left of the page (mirroring the buttons on the right):
    a raised pill, in the same lit-from-the-top-left style as the buttons,
    holding three big numbers - correct (green tick), misses (red cross)
@@ -477,7 +644,7 @@ main {
      and the top of the map. */
   top: 50%;
   transform: translateY(-50%);
-  left: 1rem;
+  left: calc(1rem + 40px + 0.6rem); /* right of the logo */
   z-index: 10; /* above the map */
   display: flex;
   align-items: center;
@@ -653,14 +820,14 @@ main {
   }
 }
 
-/* Wide windows: the scoreboard sits in the top-left corner, so keep the
+/* Wide windows: the logo and scoreboard sit in the top-left corner, so keep the
    centred title (long names like "Saint Vincent and the Grenadines")
    clear of it on both sides, the same on the left and right so the
    title stays centred on the page. */
 @media (min-width: 901px) {
   header {
-    padding-left: 17rem;
-    padding-right: 17rem;
+    padding-left: 19rem;
+    padding-right: 19rem;
   }
 }
 
@@ -677,6 +844,29 @@ main {
   #scoreboard[hidden] {
     display: none;
   }
+
+  /* The logo stays in the top-left corner, mirroring the info and
+     settings buttons in the top-right: same size and top edge. */
+  #about {
+    top: 1rem;
+    transform: none;
+  }
+
+  /* Keep the centred title clear of the logo on the left and the two
+     buttons on the right (2 x 40px + 8px gap), the same on both sides
+     so it stays centred. */
+  header {
+    padding-left: calc(1rem + 88px + 0.75rem);
+    padding-right: calc(1rem + 88px + 0.75rem);
+  }
+}
+
+/* Phones: the title is left-aligned (see the 520px rule further up), so
+   it only needs to clear the logo's width on the left. */
+@media (max-width: 520px) {
+  header {
+    padding-left: calc(1rem + 40px + 0.75rem);
+  }
 }
 
 /* Dropdown panels (info and settings), in the same raised style as the
@@ -688,7 +878,8 @@ main {
      since the panel floats higher), plus a faint highlight line just
      inside the top edge. */
 #info-panel,
-#settings-panel {
+#settings-panel,
+#about-panel {
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
@@ -708,8 +899,76 @@ main {
 }
 
 #info-panel[hidden],
-#settings-panel[hidden] {
+#settings-panel[hidden],
+#about-panel[hidden] {
   display: none;
+}
+
+/* The About panel opens under the logo, so it's anchored on the left
+   (the shared rule above anchors on the right, for the top-right
+   buttons). */
+#about-panel {
+  left: 0;
+  right: auto;
+  width: 380px; /* fits the longest credit line (MapLibre) on one line */
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+#about-panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+#about-panel h3 {
+  margin: 0.9rem 0 0.4rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+#about-panel p,
+#about-panel li {
+  color: #a7b2be;
+}
+
+#about-panel p {
+  margin: 0;
+}
+
+/* A little space between consecutive paragraphs. */
+#about-panel p + p {
+  margin-top: 0.5rem;
+}
+
+#about-panel ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+#about-panel li + li {
+  margin-top: 0.25rem;
+}
+
+/* Links in the game's orange highlight colour (like the logo's pin). */
+#about-panel a {
+  color: #e8a33d;
+  text-decoration: none;
+}
+
+#about-panel a:hover {
+  text-decoration: underline;
+}
+
+/* "Made by ..." line, separated from the credits by a thin line. */
+#about-panel .about-footer {
+  margin-top: 0.9rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.8rem;
 }
 
 /* The info panel holds longer text: wider, and it scrolls if the window
@@ -731,8 +990,17 @@ main {
   background: linear-gradient(to bottom, var(--panel), var(--panel-bottom));
 }
 
-/* Tabs ("How to Play", "Countries and Territories") as a card file:
-   - the outer info panel is a plain container (#info-panel above);
+/* The settings panel also holds tabs ("Mouse" / "Keyboard"): a little
+   wider to fit them, with the same darker container gradient as the
+   info panel. */
+#settings-panel {
+  width: 320px;
+  background: linear-gradient(to bottom, var(--panel), var(--panel-bottom));
+}
+
+/* Tabs (info: "How to Play" / "Countries and Territories"; settings:
+   "Mouse" / "Keyboard") as a card file:
+   - the outer panel is a plain container (#info-panel, #settings-panel);
    - the selected tab and its content form one raised "sheet": the same
      lighter fill, one outline (lighter along the top), and no line where
      the tab meets the content, so they read as a single piece;
@@ -740,7 +1008,7 @@ main {
      inner shadow at the top, muted text, sitting on the sheet's top edge.
    The tab overlaps the sheet's top border by 1px and covers it with its
    own fill, which is what joins the two. */
-#info-panel .tabs {
+.tabbed-panel .tabs {
   position: relative;
   z-index: 1; /* tabs above the sheet's top border */
   display: flex;
@@ -748,7 +1016,7 @@ main {
   margin-top: -0.25rem;
 }
 
-#info-panel [role="tab"] {
+.tabbed-panel [role="tab"] {
   margin-bottom: -1px;
   padding: 0.4rem 0.85rem;
   /* Top part of the sheet gradient: lighter at the top, reaching the
@@ -766,7 +1034,7 @@ main {
   cursor: pointer;
 }
 
-#info-panel [role="tab"][aria-selected="false"] {
+.tabbed-panel [role="tab"][aria-selected="false"] {
   background: var(--slider-groove);
   border-color: var(--button-outline);
   border-bottom-color: var(--button-outline);
@@ -774,15 +1042,15 @@ main {
   color: var(--muted);
 }
 
-#info-panel [role="tab"][aria-selected="false"]:hover {
+.tabbed-panel [role="tab"][aria-selected="false"]:hover {
   color: var(--ink);
 }
 
-#info-panel [role="tab"]:focus {
+.tabbed-panel [role="tab"]:focus {
   outline: none;
 }
 
-#info-panel [role="tab"]:focus-visible {
+.tabbed-panel [role="tab"]:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: -3px;
   border-radius: 7px 7px 0 0;
@@ -790,7 +1058,7 @@ main {
 
 /* The sheet under the tabs: the selected tab's content. Square top-left
    corner, where the first tab sits. */
-#info-panel .tabpanel {
+.tabbed-panel .tabpanel {
   padding: 0.8rem 0.9rem 0.7rem;
   /* Continues the selected tab's gradient: from the shared --sheet colour
      at the top to slightly darker at the bottom. */
@@ -800,7 +1068,7 @@ main {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
-#info-panel .tabpanel > :last-child {
+.tabbed-panel .tabpanel > :last-child {
   margin-bottom: 0;
 }
 
@@ -846,6 +1114,51 @@ main {
   margin-top: 0.9rem;
   padding-top: 0.9rem;
   border-top: 1px solid var(--border);
+}
+
+/* Heading of a setting that isn't a slider (the list of keys). */
+#settings-panel .setting-title {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* The keys and what they do, in two columns. */
+.key-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.key-list dt {
+  white-space: nowrap;
+}
+
+.key-list dd {
+  margin: 0;
+  color: #a7b2be;
+}
+
+/* Keys drawn as small raised keycaps, like the buttons. */
+kbd {
+  display: inline-block;
+  min-width: 1.5em;
+  padding: 0.1rem 0.35rem 0.15rem;
+  background: linear-gradient(to bottom, var(--button-top-hover), var(--button-top));
+  border: 1px solid var(--button-outline);
+  border-top-color: var(--button-edge-light);
+  border-bottom-color: var(--button-edge-dark);
+  border-radius: 4px;
+  box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.45);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .settings-hint {

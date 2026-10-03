@@ -13,7 +13,7 @@ additional detail while zooming in.
 */
 
 import { adjust } from './adjust.js';
-import { initSettings, getScrollZoomPercent } from './settings.js';
+import { initSettings, getScrollZoomPercent, getKeyPanPercent, getKeyZoomPercent } from './settings.js';
 import { initPanel, initTabs } from './panels.js';
 import { isInteractive } from './handler.js';
 import { startGame } from './game.js';
@@ -35,8 +35,9 @@ document.addEventListener('DOMContentLoaded', main);
 
 async function main() {
 
-  // The info and settings panels work independently of the map, so set
-  // them up first.
+  // The info, settings and About (logo) panels work independently of the
+  // map, so set them up first.
+  initPanel('about', 'logo', 'about-panel');
   initPanel('info', 'info-button', 'info-panel');
   initTabs(document.querySelector('#info-panel [role="tablist"]'));
   initSettings();
@@ -44,6 +45,11 @@ async function main() {
   // Temporary status text for testing purposes.
   const statusEl = document.getElementById('status');
   statusEl.textContent = 'Loading map data…';
+
+  // The spinner over the map area fades out once the map has loaded, or
+  // if loading fails (the status line then says why).
+  const loadingEl = document.getElementById('map-loading');
+  const hideLoading = () => loadingEl.classList.add('done');
 
   // Start the lakes download straight away so it runs in parallel with the
   // countries. If it fails, the map still works, just without lakes.
@@ -63,6 +69,7 @@ async function main() {
   } catch (err) {
     console.error(err);
     statusEl.textContent = 'Failed to load map data — check the console.';
+    hideLoading();
     return;
   }
 
@@ -127,19 +134,24 @@ async function main() {
   // Set up the game once the map has finished loading. It replaces the
   // "Loading map data…" status with its own text and shows the Start
   // button; the first country appears when the player presses it.
-  map.on('load', () => startGame(map, countriesGeoJsonData, {
-    titleEl: document.querySelector('header h1'),
-    statusEl,
-    startButton: document.getElementById('start-button'),
-    scoreboard: document.getElementById('scoreboard'),
-    results: document.getElementById('results'),
-    gameButtons: document.getElementById('game-buttons')
-  }));
+  map.on('load', () => {
+    hideLoading();
+    startGame(map, countriesGeoJsonData, {
+      titleEl: document.querySelector('header h1'),
+      statusEl,
+      startButton: document.getElementById('start-button'),
+      scoreboard: document.getElementById('scoreboard'),
+      results: document.getElementById('results'),
+      gameButtons: document.getElementById('game-buttons'),
+      logo: document.getElementById('logo')
+    });
+  });
 
   // Error handling in case map loading fails.
   map.on('error', e => {
     console.error('MapLibre error:', e.error);
     statusEl.textContent = 'Map failed to load — check the console.';
+    hideLoading();
   });
 }
 
@@ -219,10 +231,12 @@ function setupKeyboardNavigation(map) {
     }
 
     if (velocity.x || velocity.y) {
-      map.panBy([velocity.x * PAN_SPEED * dt, velocity.y * PAN_SPEED * dt], { duration: 0 });
+      // Speeds scaled by the Keyboard tab of the settings (100% = as above).
+      const panSpeed = PAN_SPEED * getKeyPanPercent() / 100;
+      map.panBy([velocity.x * panSpeed * dt, velocity.y * panSpeed * dt], { duration: 0 });
     }
     if (velocity.z) {
-      map.setZoom(map.getZoom() + velocity.z * ZOOM_SPEED * dt);
+      map.setZoom(map.getZoom() + velocity.z * ZOOM_SPEED * getKeyZoomPercent() / 100 * dt);
     }
 
     const moving = Math.abs(velocity.x) + Math.abs(velocity.y) + Math.abs(velocity.z) > 0.001;

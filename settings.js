@@ -1,18 +1,22 @@
 /*
 Settings panel (gear button, top-right of the page).
 
-Holds two sliders:
+Two tabs of sliders:
+Mouse
 - Double-click speed: the longest gap between two clicks on the same
   country that still counts as a double-click.
 - Scroll zoom speed: how far each mouse-wheel notch zooms, as a
   percentage of the normal speed.
+Keyboard
+- Pan speed / Zoom speed: how fast the arrow keys and the + / - keys
+  move the map, as a percentage of the normal speed.
 
 The values are remembered in the browser's localStorage between visits;
 if storage is unavailable (e.g. private browsing) the settings still
 work, they just reset to the defaults on reload.
 */
 
-import { initPanel } from './panels.js';
+import { initPanel, initTabs } from './panels.js';
 
 const settings = {
   doubleClickDelayMs: {
@@ -27,6 +31,22 @@ const settings = {
     sliderId: 'scroll-zoom-speed',
     valueId: 'scroll-zoom-speed-value',
     storageKey: 'worldMapGame.scrollZoomPercent',
+    defaultValue: 100,
+    format: value => `${value}%`,
+    value: null
+  },
+  keyPanPercent: {
+    sliderId: 'key-pan-speed',
+    valueId: 'key-pan-speed-value',
+    storageKey: 'worldMapGame.keyPanPercent',
+    defaultValue: 100,
+    format: value => `${value}%`,
+    value: null
+  },
+  keyZoomPercent: {
+    sliderId: 'key-zoom-speed',
+    valueId: 'key-zoom-speed-value',
+    storageKey: 'worldMapGame.keyZoomPercent',
     defaultValue: 100,
     format: value => `${value}%`,
     value: null
@@ -46,9 +66,21 @@ export function getScrollZoomPercent() {
   return settings.scrollZoomPercent.value;
 }
 
+// Read by the keyboard navigation in main.js on every frame: 100 = normal
+// speed for the arrow keys (pan) and the + / - keys (zoom).
+export function getKeyPanPercent() {
+  return settings.keyPanPercent.value;
+}
+
+export function getKeyZoomPercent() {
+  return settings.keyZoomPercent.value;
+}
+
 export function initSettings() {
-  // Opening/closing the panel (shared with the info panel, see panels.js).
+  // Opening/closing the panel (shared with the info panel, see panels.js),
+  // and its Mouse / Keyboard tabs.
   initPanel('settings', 'settings-button', 'settings-panel');
+  initTabs(document.querySelector('#settings-panel [role="tablist"]'));
 
   for (const setting of Object.values(settings)) initSlider(setting);
 }

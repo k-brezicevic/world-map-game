@@ -32,6 +32,53 @@
 </head>
 <body>
   <header>
+    <!-- Logo, top-left of the page: the favicon's map pin on its raised
+         tile (a copy of favicon.svg, inline so the pin can be animated on
+         its own: it drops onto the tile and bounces once the map has loaded,
+         see game.js). Clicking it opens the About panel (panels.js). -->
+    <div id="about">
+      <button id="logo" type="button" aria-label="About World Map Game"
+              aria-expanded="false" aria-controls="about-panel">
+        <svg viewBox="73 101 900 900" aria-hidden="true">
+          <defs>
+            <linearGradient id="logo-tile" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2a4563"/>
+              <stop offset="1" stop-color="#14233a"/>
+            </linearGradient>
+            <linearGradient id="logo-tile-edge" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#4d6888"/>
+              <stop offset="0.5" stop-color="#22344a"/>
+              <stop offset="1" stop-color="#0a1320"/>
+            </linearGradient>
+            <linearGradient id="logo-orange" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#f6bd5d"/>
+              <stop offset="1" stop-color="#d98a20"/>
+            </linearGradient>
+          </defs>
+          <rect x="91" y="119" width="864" height="864" rx="190" fill="url(#logo-tile)" stroke="url(#logo-tile-edge)" stroke-width="18"/>
+          <rect x="112" y="140" width="822" height="822" rx="172" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="8"/>
+          <g transform="translate(523 551) scale(1.15) translate(-523 -551)">
+            <ellipse class="logo-pin-shadow" cx="523" cy="850" rx="120" ry="30" fill="#000" fill-opacity="0.35"/>
+            <path class="logo-pin" d="M523 840 C458 742 323 618 323 465 A200 200 0 1 1 723 465 C723 618 588 742 523 840 Z M523 545 A80 80 0 1 0 523 385 A80 80 0 1 0 523 545 Z" fill="url(#logo-orange)" fill-rule="evenodd" stroke="#0b1117" stroke-opacity="0.5" stroke-width="10"/>
+          </g>
+        </svg>
+      </button>
+
+      <div id="about-panel" hidden>
+        <h2>About</h2>
+        <p>A geography game where the goal is to find all 202 countries on the world map, one at a time.</p>
+        <p>See the Countries and Territories tab in the info panel for what counts as a country in this game.</p>
+        <h3>Credits</h3>
+        <ul>
+          <li>Map data: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a> (public domain)</li>
+          <li>Map display: <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a> (BSD 3-Clause License)</li>
+          <li>Map geometry processing: <a href="https://turfjs.org/" target="_blank" rel="noopener">Turf.js</a> (MIT License)</li>
+        </ul>
+        <p class="about-footer">Made by Krševan Brezičević &middot;
+           <a href="mailto:k.brezicevic@gmail.com">k.brezicevic@gmail.com</a></p>
+      </div>
+    </div>
+
     <!-- Replaced by the country to find once the game starts (game.js). -->
     <h1>World Map Game</h1>
     <p id="status">Loading map data…</p>
@@ -91,7 +138,7 @@
           </svg>
         </button>
 
-        <div id="info-panel" hidden>
+        <div id="info-panel" class="tabbed-panel" hidden>
           <!-- Two tabs; "How to Play" is selected first. Switching is wired
                up in panels.js (initTabs). -->
           <div class="tabs" role="tablist" aria-label="Information">
@@ -140,26 +187,73 @@
           </svg>
         </button>
 
-        <div id="settings-panel" hidden>
-          <div class="setting">
-            <label for="double-click-delay">Double-click speed</label>
-            <p class="settings-hint">Time interval between two clicks that still counts as a double-click.</p>
-            <input type="range" id="double-click-delay" min="150" max="800" step="10">
-            <div class="settings-scale">
-              <span>Quicker</span>
-              <output id="double-click-delay-value" for="double-click-delay"></output>
-              <span>Slower</span>
+        <div id="settings-panel" class="tabbed-panel" hidden>
+          <!-- Two tabs: Mouse and Keyboard settings. Switching is wired up
+               in panels.js (initTabs), called from settings.js. -->
+          <div class="tabs" role="tablist" aria-label="Settings">
+            <button id="tab-mouse" type="button" role="tab"
+                    aria-selected="true" aria-controls="tabpanel-mouse">Mouse</button>
+            <button id="tab-keyboard" type="button" role="tab"
+                    aria-selected="false" aria-controls="tabpanel-keyboard" tabindex="-1">Keyboard</button>
+          </div>
+
+          <div id="tabpanel-mouse" class="tabpanel" role="tabpanel" aria-labelledby="tab-mouse">
+            <div class="setting">
+              <label for="double-click-delay">Double-click speed</label>
+              <p class="settings-hint">Time interval between two clicks that still counts as a double-click.</p>
+              <input type="range" id="double-click-delay" min="150" max="800" step="10">
+              <div class="settings-scale">
+                <span>Quicker</span>
+                <output id="double-click-delay-value" for="double-click-delay"></output>
+                <span>Slower</span>
+              </div>
+            </div>
+
+            <div class="setting">
+              <label for="scroll-zoom-speed">Scroll zoom speed</label>
+              <p class="settings-hint">How far each turn of the mouse wheel zooms the map.</p>
+              <input type="range" id="scroll-zoom-speed" min="40" max="300" step="10">
+              <div class="settings-scale">
+                <span>Slower</span>
+                <output id="scroll-zoom-speed-value" for="scroll-zoom-speed"></output>
+                <span>Faster</span>
+              </div>
             </div>
           </div>
 
-          <div class="setting">
-            <label for="scroll-zoom-speed">Scroll zoom speed</label>
-            <p class="settings-hint">How far each turn of the mouse wheel zooms the map.</p>
-            <input type="range" id="scroll-zoom-speed" min="40" max="300" step="10">
-            <div class="settings-scale">
-              <span>Slower</span>
-              <output id="scroll-zoom-speed-value" for="scroll-zoom-speed"></output>
-              <span>Faster</span>
+          <div id="tabpanel-keyboard" class="tabpanel" role="tabpanel" aria-labelledby="tab-keyboard" hidden>
+            <div class="setting">
+              <label for="key-pan-speed">Pan speed</label>
+              <p class="settings-hint">How fast the arrow keys move the map.</p>
+              <input type="range" id="key-pan-speed" min="40" max="400" step="10">
+              <div class="settings-scale">
+                <span>Slower</span>
+                <output id="key-pan-speed-value" for="key-pan-speed"></output>
+                <span>Faster</span>
+              </div>
+            </div>
+
+            <div class="setting">
+              <label for="key-zoom-speed">Zoom speed</label>
+              <p class="settings-hint">How fast the + and &minus; keys zoom the map.</p>
+              <input type="range" id="key-zoom-speed" min="40" max="400" step="10">
+              <div class="settings-scale">
+                <span>Slower</span>
+                <output id="key-zoom-speed-value" for="key-zoom-speed"></output>
+                <span>Faster</span>
+              </div>
+            </div>
+
+            <div class="setting">
+              <span class="setting-title">Keys</span>
+              <dl class="key-list">
+                <dt><kbd>&larr;</kbd> <kbd>&uarr;</kbd> <kbd>&rarr;</kbd> <kbd>&darr;</kbd></dt>
+                <dd>Move the map</dd>
+                <dt><kbd>+</kbd> <kbd>&minus;</kbd></dt>
+                <dd>Zoom in / out</dd>
+                <dt><kbd>Enter</kbd></dt>
+                <dd>Confirm the selected country</dd>
+              </dl>
             </div>
           </div>
         </div>
@@ -171,6 +265,13 @@
   <main>
     <div id="map-wrapper">
       <div id="map"></div>
+
+      <!-- Loading spinner in the middle of the map area, removed once the
+           map has loaded (main.js). -->
+      <div id="map-loading" role="status">
+        <span class="spinner" aria-hidden="true"></span>
+        <span class="visually-hidden">Loading map…</span>
+      </div>
 
       <!-- Results card, shown over the (lightly dimmed) map when a game
            ends. Filled in and wired up by game.js. -->
