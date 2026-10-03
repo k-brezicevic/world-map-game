@@ -211,10 +211,11 @@ h1.flash {
   }
 }
 
-/* The "World Map Game" title leaving when Start is pressed (added by
-   game.js): the reverse of the country-name flash - it shrinks, turns
-   orange with the glow, and fades out. Same smooth-scaling hints as
-   h1.flash. */
+/* The title leaving (added by game.js): the "World Map Game" title when
+   Start is pressed, and each country name before the next one appears.
+   The reverse of the country-name flash - it shrinks, turns orange with
+   the glow, and fades out. 400ms, matching TITLE_VANISH_MS in game.js.
+   Same smooth-scaling hints as h1.flash. */
 h1.vanish {
   animation: title-vanish 400ms ease-in forwards;
   will-change: transform;
@@ -410,7 +411,7 @@ main {
   width: auto;
   height: 38px;
   margin: 0.75rem auto 0;
-  padding: 0 1.75rem;
+  padding: 0 1.75rem 3px; /* bottom padding lifts the text slightly */
   font: inherit;
   font-size: 0.95rem;
   font-weight: 600;
@@ -440,7 +441,7 @@ main {
 #game-buttons button {
   width: auto;
   height: 34px;
-  padding: 0 1.1rem;
+  padding: 0 1.1rem 3px; /* bottom padding lifts the text slightly */
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
@@ -459,7 +460,7 @@ main {
 .results-buttons button {
   width: auto;
   height: 38px;
-  padding: 0 1.4rem;
+  padding: 0 1.4rem 3px; /* bottom padding lifts the text slightly */
   font: inherit;
   font-size: 0.95rem;
   font-weight: 600;

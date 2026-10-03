@@ -111,7 +111,7 @@ export function adjust(geojson) {
         try {
             const merged = turf.union(targetFeature, disputedFeature);
             if (merged && merged.geometry) {
-                targetFeature.geometry = merged.geometry;
+                targetFeature.geometry = withoutSliverHoles(merged.geometry);
                 return true;
             }
         } catch (err) {
@@ -179,6 +179,12 @@ export function adjust(geojson) {
 
     if (mergedFeatures.length > 0) {
         geojson.features = geojson.features.filter(f => !mergedFeatures.includes(f));
+    }
+
+    // Egypt's outline in the source data has thin slivers along its
+    // southern border (not from a merge here), cleaned the same way.
+    for (const f of geojson.features) {
+        if (SLIVER_CLEANUP.includes(f.properties.ADMIN)) f.geometry = withoutSliverHoles(f.geometry);
     }
 
     renameCountries(geojson);
@@ -303,7 +309,7 @@ function assignCrimeaToUkraine(geojson) {
     try {
         const merged = turf.union(ukraine, crimeaPolygon);
         if (merged && merged.geometry) {
-            ukraine.geometry = merged.geometry;
+            ukraine.geometry = withoutSliverHoles(merged.geometry);
         }
     } catch (err) {
         console.warn('Failed to merge Crimea into Ukraine:', err);
@@ -417,6 +423,66 @@ function renameCountries(geojson) {
         if (RENAMES[f.properties.ADMIN]) f.properties.ADMIN = RENAMES[f.properties.ADMIN];
         if (RENAMES[f.properties.NAME]) f.properties.NAME = RENAMES[f.properties.NAME];
     });
+}
+
+/*
+    Removes thin slivers from a country's shape, which otherwise show as
+    stray lines (in the ocean colour, or as border lines):
+    - small holes: e.g. gaps left by merging two shapes whose outlines
+      don't line up exactly (Bir Tawil into Sudan);
+    - small pinched-off loops: the outline leaves a point and comes back
+      to the very same point, enclosing almost nothing (e.g. on Egypt's
+      Red Sea coast in the source data, a loop about 50 km inland and
+      back), so only its border line shows.
+    Anything smaller than SLIVER_MAX_KM2 goes. Real holes (e.g. Lesotho
+    inside South Africa) are far larger. Only shapes something was merged
+    into are cleaned, plus those in SLIVER_CLEANUP - not every country,
+    because some real holes are small too (Vatican City inside Italy is
+    0.01 km2).
+*/
+const SLIVER_MAX_KM2 = 50;
+const SLIVER_CLEANUP = ['Egypt'];
+
+function withoutSliverHoles(geometry) {
+    const areaKm2 = ring => turf.area(turf.polygon([ring])) / 1e6;
+    const clean = polygon => [
+        withoutPinchedLoops(polygon[0]),
+        ...polygon.slice(1)
+            .filter(ring => areaKm2(ring) >= SLIVER_MAX_KM2)
+            .map(withoutPinchedLoops)
+    ];
+    if (geometry.type === 'Polygon') {
+        return { ...geometry, coordinates: clean(geometry.coordinates) };
+    }
+    if (geometry.type === 'MultiPolygon') {
+        return { ...geometry, coordinates: geometry.coordinates.map(clean) };
+    }
+    return geometry;
+
+    // Cuts out each part of a ring that leaves a point and returns to the
+    // same point, if that loop encloses less than SLIVER_MAX_KM2.
+    function withoutPinchedLoops(ring) {
+        let changed = true;
+        while (changed) {
+            changed = false;
+            const firstSeen = new Map();
+            for (let i = 0; i < ring.length - 1; i++) {  // last point repeats the first
+                const key = ring[i][0] + ',' + ring[i][1];
+                if (!firstSeen.has(key)) {
+                    firstSeen.set(key, i);
+                    continue;
+                }
+                const j = firstSeen.get(key);
+                const loop = ring.slice(j, i + 1);
+                if (loop.length >= 4 && areaKm2(loop) < SLIVER_MAX_KM2) {
+                    ring = [...ring.slice(0, j + 1), ...ring.slice(i + 1)];
+                    changed = true;
+                    break;
+                }
+            }
+        }
+        return ring;
+    }
 }
 
 function ringCentroid(ring) {

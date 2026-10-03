@@ -47,6 +47,10 @@ const WRONG_PAUSE_MS = 1500;
 // Pause between pressing Start (or Play again) and the first country.
 const START_DELAY_MS = 700;
 
+// Length of the title's shrink-and-fade-out; must match h1.vanish's
+// animation in page-style.css.
+const TITLE_VANISH_MS = 400;
+
 // After a miss, the asked-for country flashes green this many times (to
 // show where it is), each flash BLINK_MS on and BLINK_MS off, then turns
 // red and stays red. The flashing is part of WRONG_PAUSE_MS, not added
@@ -148,8 +152,7 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     // page-style.css; cleared when it ends, see below). Meanwhile, a short
     // pause before the first country, with answering (map and buttons)
     // locked.
-    titleEl.classList.remove('flash');
-    titleEl.classList.add('vanish');
+    vanishTitle();
     setAnswering(false);
     setTimeout(nextCountry, START_DELAY_MS);
   }
@@ -171,9 +174,11 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
 
   // Puts the current country at the end of the list and moves on.
   function skipCountry() {
+    setAnswering(false);
     input.clearSelection();
     queue.unshift(target);
-    nextCountry();
+    vanishTitle();
+    setTimeout(nextCountry, TITLE_VANISH_MS);
   }
 
   // Whether the player can answer now (map and buttons), or not (e.g.
@@ -255,6 +260,10 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     updateScoreboard();
 
     const shown = target;
+    const pause = isCorrect ? CORRECT_PAUSE_MS : WRONG_PAUSE_MS;
+    // The name fades out during the last part of the pause, so the next
+    // country follows at the same pace.
+    setTimeout(vanishTitle, pause - TITLE_VANISH_MS);
     setTimeout(() => {
       // End of the reveal: the asked country keeps its result colour for
       // the rest of the game (same colour, slightly darker); the wrong
@@ -263,7 +272,7 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
       if (guess && !isCorrect) setResult(guess, { picked: false });
       setRing(null);
       nextCountry();
-    }, isCorrect ? CORRECT_PAUSE_MS : WRONG_PAUSE_MS);
+    }, pause);
   }
 
   // Briefly flashes the title (see h1.flash in page-style.css) so the
@@ -273,6 +282,15 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     titleEl.classList.remove('flash', 'vanish');
     void titleEl.offsetWidth;
     titleEl.classList.add('flash');
+  }
+
+  // The title (the game's name, or the country just answered or skipped)
+  // shrinks and fades out (see h1.vanish in page-style.css), taking
+  // TITLE_VANISH_MS; it's then cleared until the next one appears.
+  function vanishTitle() {
+    titleEl.classList.remove('flash', 'vanish');
+    void titleEl.offsetWidth;
+    titleEl.classList.add('vanish');
   }
 
   // Remove the class once the flash is over: during it the title is drawn
