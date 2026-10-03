@@ -124,12 +124,19 @@ h1 {
    soft), and settles to normal. The glow fades a little more slowly than the colour. */
 h1.flash {
   animation: title-flash 1100ms ease-out;
+  /* Smooth scaling: without these the browser redraws the text at every
+     size step (the colour and glow change too), snapping the letters to
+     whole pixels each time, so they shake slightly. With them, the title
+     is drawn on its own layer and that layer is scaled smoothly by the
+     graphics card. */
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 @keyframes title-flash {
   0% {
     color: var(--map-selected);
-    transform: scale(1.15);
+    transform: scale3d(1.15, 1.15, 1);
     text-shadow:
       0 0 4px rgba(232, 163, 61, 1),
       0 0 14px rgba(232, 163, 61, 0.9),
@@ -137,7 +144,7 @@ h1.flash {
   }
   45% {
     color: var(--ink);
-    transform: scale(1);
+    transform: scale3d(1, 1, 1);
     text-shadow:
       0 0 4px rgba(232, 163, 61, 0.7),
       0 0 14px rgba(232, 163, 61, 0.6),
@@ -145,7 +152,7 @@ h1.flash {
   }
   100% {
     color: var(--ink);
-    transform: scale(1);
+    transform: scale3d(1, 1, 1);
     text-shadow:
       0 0 4px rgba(232, 163, 61, 0),
       0 0 14px rgba(232, 163, 61, 0),
@@ -358,7 +365,10 @@ main {
   display: flex;
   justify-content: center;
   gap: 0.6rem;
-  margin-top: 0.6rem;
+  /* Start's top margin (0.75rem) plus the 4px these buttons are shorter
+     than Start (34px vs 38px), so the header - and the space above the
+     map - is the same height before, during and after a game. */
+  margin-top: calc(0.75rem + 4px);
 }
 
 #game-buttons[hidden] {
@@ -657,10 +667,50 @@ main {
   line-height: 1.45;
 }
 
-#info-panel h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
+/* Tabs ("How to Play", "Countries and Territories") along the top of the
+   panel: the selected tab is bright with an orange underline, the other
+   muted; a thin line runs under the whole row. */
+#info-panel .tabs {
+  display: flex;
+  gap: 1.1rem;
+  margin: -0.25rem 0 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+#info-panel [role="tab"] {
+  margin-bottom: -1px; /* underline sits on the row's line */
+  padding: 0.35rem 0 0.5rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.95rem;
   font-weight: 600;
+  cursor: pointer;
+}
+
+#info-panel [role="tab"]:hover {
+  color: var(--ink);
+}
+
+#info-panel [role="tab"][aria-selected="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--map-selected);
+}
+
+#info-panel [role="tab"]:focus {
+  outline: none;
+}
+
+#info-panel [role="tab"]:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+#info-panel .tabpanel > :last-child {
+  margin-bottom: 0.25rem;
 }
 
 #info-panel p {
@@ -685,6 +735,13 @@ main {
 #info-panel li strong {
   color: var(--ink);
   font-weight: 600;
+}
+
+/* Countries and Territories tab: the descriptions after the names (e.g.
+   "– the two UN observer states") in the same grey as the intro line;
+   the bold names stay white (rule above). */
+#tabpanel-countries li {
+  color: #a7b2be;
 }
 
 #settings-panel label {

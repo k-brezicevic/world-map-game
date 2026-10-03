@@ -15,9 +15,10 @@ export function isInteractive(feature) {
 const INTERACTIVE_LAYERS = ['countries-fill', 'countries-markers-hit'];
 
 /*
-Mouse input on the map: hover highlight, single-click selection (orange)
-and double-click confirmation.
-  onConfirm(countryId): called when the player double-clicks a country;
+Mouse (and Enter key) input on the map: hover highlight, single-click
+selection (orange), and confirmation by double-click or by Enter.
+  onConfirm(countryId): called when the player double-clicks a country
+                        (or presses Enter with one selected);
                         countryId is the country's name (its map id).
 Returns controls for the game:
   clearSelection():  removes the orange selection.
@@ -94,15 +95,7 @@ export function initEventHandling(map, { onConfirm }) {
       now - lastClickTime < doubleClickWindowMs;
 
     if (isDoubleClick) {
-      // Reset tracking so a third rapid click starts fresh.
-      lastClickFeatureId = null;
-      lastClickTime = 0;
-      // A deferred deselect might still be pending from the previous
-      // click on this same country — cancel it, since we're
-      // confirming instead.
-      cancelPendingDeselect();
-      setSelected(null);
-      onConfirm(featureId);
+      confirm(featureId);
       return;
     }
 
@@ -156,6 +149,30 @@ export function initEventHandling(map, { onConfirm }) {
   map.on('mouseleave', INTERACTIVE_LAYERS, () => {
     map.getCanvas().style.cursor = '';
     setHovered(null);
+  });
+
+  // Submits a country as the player's answer: on a double-click, or on
+  // Enter with a country selected (see below).
+  function confirm(featureId) {
+    // Reset tracking so a third rapid click starts fresh.
+    lastClickFeatureId = null;
+    lastClickTime = 0;
+    // A deferred deselect might still be pending from an earlier click on
+    // this same country — cancel it, since we're confirming instead.
+    cancelPendingDeselect();
+    setSelected(null);
+    onConfirm(featureId);
+  }
+
+  // Enter confirms the selected (orange) country, as an alternative to a
+  // double-click. Ignored while locked, with nothing selected, or when
+  // Enter belongs to something else: a focused button (which Enter
+  // presses), link or form field.
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || e.repeat || locked || selectedFeatureId === null) return;
+    if (e.target.closest('button, a, input, select, textarea, summary, [contenteditable]')) return;
+    e.preventDefault();
+    confirm(selectedFeatureId);
   });
 
   return {

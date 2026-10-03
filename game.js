@@ -264,6 +264,13 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     titleEl.classList.add('flash');
   }
 
+  // Remove the class once the flash is over: during it the title is drawn
+  // on its own layer for smooth scaling (see h1.flash), which renders text
+  // slightly less crisply, so the name goes back to normal text afterwards.
+  titleEl.addEventListener('animationend', e => {
+    if (e.animationName === 'title-flash') titleEl.classList.remove('flash');
+  });
+
   // Remaining = countries in this game not answered yet (including the
   // one currently asked).
   function updateScoreboard() {

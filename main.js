@@ -14,7 +14,7 @@ additional detail while zooming in.
 
 import { adjust } from './adjust.js';
 import { initSettings } from './settings.js';
-import { initPanel } from './panels.js';
+import { initPanel, initTabs } from './panels.js';
 import { isInteractive } from './handler.js';
 import { startGame } from './game.js';
 
@@ -38,6 +38,7 @@ async function main() {
   // The info and settings panels work independently of the map, so set
   // them up first.
   initPanel('info', 'info-button', 'info-panel');
+  initTabs(document.querySelector('#info-panel [role="tablist"]'));
   initSettings();
 
   // Temporary status text for testing purposes.

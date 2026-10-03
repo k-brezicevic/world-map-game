@@ -78,9 +78,9 @@
          panel. Opening/closing is wired up in panels.js. -->
     <div id="header-tools">
 
-      <!-- Info button + panel: explains what counts as a country. -->
+      <!-- Info button + panel: how to play, and what counts as a country. -->
       <div id="info">
-        <button id="info-button" type="button" aria-label="What counts as a country?"
+        <button id="info-button" type="button" aria-label="How to play and what counts as a country"
                 aria-expanded="false" aria-controls="info-panel">
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"
                fill="none" stroke="currentColor" stroke-width="2"
@@ -92,15 +92,39 @@
         </button>
 
         <div id="info-panel" hidden>
-          <h2>What counts as a country?</h2>
-          <p>This map treats 202 areas as countries:</p>
-          <ul>
-            <li><strong>All 193 member states of the United Nations</strong>,</li>
-            <li><strong>Palestine</strong> and <strong>Vatican City</strong> &ndash; the two UN observer states,</li>
-            <li><strong>Taiwan</strong> &ndash; de facto sovereign state,</li>
-            <li><strong>Kosovo</strong> &ndash; widely recognized sovereign state,</li>
-            <li><strong>Greenland, Puerto Rico, Falkland Islands, French Guiana</strong> and <strong>New Caledonia</strong> &ndash; larger territories with distinct geographic identity.</li>
-          </ul>
+          <!-- Two tabs; "How to Play" is selected first. Switching is wired
+               up in panels.js (initTabs). -->
+          <div class="tabs" role="tablist" aria-label="Information">
+            <button id="tab-how-to-play" type="button" role="tab"
+                    aria-selected="true" aria-controls="tabpanel-how-to-play">How to Play</button>
+            <button id="tab-countries" type="button" role="tab"
+                    aria-selected="false" aria-controls="tabpanel-countries" tabindex="-1">Countries and Territories</button>
+          </div>
+
+          <div id="tabpanel-how-to-play" class="tabpanel" role="tabpanel" aria-labelledby="tab-how-to-play">
+            <ul>
+              <li>A country name is displayed at the top.</li>
+              <li>Find it on the map and double-click it.</li>
+              <li>Alternatively you can use single-click followed by Enter.</li>
+              <li>A single click highlights a country in orange, so you can check before answering.</li>
+              <li><strong>Correct:</strong> the country turns green. <strong>Wrong:</strong> the right country flashes green, then stays red; the one you picked shows briefly in orange.</li>
+              <li><strong>Skip</strong> sends the country to the end of the list. <strong>Don't know</strong> shows where it is and counts as a miss.</li>
+              <li>Zoom with the scroll wheel or the +/&minus; buttons, and drag to move the map.</li>
+              <li>The scoreboard shows correct answers, misses and countries remaining.</li>
+              <li>Double-clicks too fast or slow for you? Adjust the speed in Settings.</li>
+            </ul>
+          </div>
+
+          <div id="tabpanel-countries" class="tabpanel" role="tabpanel" aria-labelledby="tab-countries" hidden>
+            <p>This map treats 202 areas as countries:</p>
+            <ul>
+              <li><strong>All 193 member states of the United Nations</strong>,</li>
+              <li><strong>Palestine</strong> and <strong>Vatican City</strong> &ndash; the two UN observer states,</li>
+              <li><strong>Taiwan</strong> &ndash; de facto sovereign state,</li>
+              <li><strong>Kosovo</strong> &ndash; widely recognized sovereign state,</li>
+              <li><strong>Greenland, Puerto Rico, Falkland Islands, French Guiana</strong> and <strong>New Caledonia</strong> &ndash; larger territories with distinct geographic identity.</li>
+            </ul>
+          </div>
         </div>
       </div>
 
