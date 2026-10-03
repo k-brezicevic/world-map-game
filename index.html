@@ -224,17 +224,6 @@
 
           <div id="tabpanel-keyboard" class="tabpanel" role="tabpanel" aria-labelledby="tab-keyboard" hidden>
             <div class="setting">
-              <label for="key-pan-speed">Pan speed</label>
-              <p class="settings-hint">How fast the arrow keys move the map.</p>
-              <input type="range" id="key-pan-speed" min="40" max="400" step="10">
-              <div class="settings-scale">
-                <span>Slower</span>
-                <output id="key-pan-speed-value" for="key-pan-speed"></output>
-                <span>Faster</span>
-              </div>
-            </div>
-
-            <div class="setting">
               <label for="key-zoom-speed">Zoom speed</label>
               <p class="settings-hint">How fast the + and &minus; keys zoom the map.</p>
               <input type="range" id="key-zoom-speed" min="40" max="400" step="10">
@@ -246,14 +235,25 @@
             </div>
 
             <div class="setting">
+              <label for="key-pan-speed">Pan speed</label>
+              <p class="settings-hint">How fast the arrow keys move the map.</p>
+              <input type="range" id="key-pan-speed" min="40" max="400" step="10">
+              <div class="settings-scale">
+                <span>Slower</span>
+                <output id="key-pan-speed-value" for="key-pan-speed"></output>
+                <span>Faster</span>
+              </div>
+            </div>
+
+            <div class="setting">
               <span class="setting-title">Keys</span>
               <dl class="key-list">
-                <dt><kbd>&larr;</kbd> <kbd>&uarr;</kbd> <kbd>&rarr;</kbd> <kbd>&darr;</kbd></dt>
-                <dd>Move the map</dd>
-                <dt><kbd>+</kbd> <kbd>&minus;</kbd></dt>
-                <dd>Zoom in / out</dd>
                 <dt><kbd>Enter</kbd></dt>
                 <dd>Confirm the selected country</dd>
+                <dt><kbd>+</kbd> <kbd>&minus;</kbd></dt>
+                <dd>Zoom in / out</dd>
+                <dt><kbd>&larr;</kbd> <kbd>&uarr;</kbd> <kbd>&rarr;</kbd> <kbd>&darr;</kbd></dt>
+                <dd>Move the map</dd>
               </dl>
             </div>
           </div>

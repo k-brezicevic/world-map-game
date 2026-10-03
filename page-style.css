@@ -258,11 +258,11 @@ h1.vanish {
 }
 
 /* The game's name ("Clickland", before and after a game), styled like the
-   logo's pin: the same orange gradient (light at the top, darker at the
-   bottom), bold and larger, with a thin dark edge and the usual drop
-   shadow. The gradient is painted through the letters
-   (background-clip: text), so the edge and shadow are drop-shadow filters
-   rather than text-shadow, which would show through the letters. */
+   logo's pin: an orange gradient (a little lighter at the top), bold and
+   larger, with a thin dark edge and the usual drop shadow. The gradient
+   is painted through the letters (background-clip: text), so the edge
+   and shadow are drop-shadow filters rather than text-shadow, which
+   would show through the letters. */
 h1.brand {
   display: inline-block; /* the gradient spans the word, not the whole line */
   padding: 0 0.1em; /* room for the thin dark edge */
@@ -276,7 +276,9 @@ h1.brand {
      same line height (see h1). */
   font-size: 1.8rem;
   font-weight: 700;
-  background: linear-gradient(to bottom, #f6bd5d, #d98a20);
+  /* An orange gradient, lighter at the top than at the bottom, but less
+     strongly than on the logo's pin, so the name looks calmer. */
+  background: linear-gradient(to bottom, #f0b454, #d88f28);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
