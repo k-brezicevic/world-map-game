@@ -1,58 +1,88 @@
 /*
 Settings panel (gear button, top-right of the page).
 
-Currently holds one setting: the double-click delay — the longest gap
-between two clicks on the same country that still counts as a
-double-click. The value is remembered in the browser's localStorage
-between visits; if storage is unavailable (e.g. private browsing) the
-setting still works, it just resets to the default on reload.
+Holds two sliders:
+- Double-click speed: the longest gap between two clicks on the same
+  country that still counts as a double-click.
+- Scroll zoom speed: how far each mouse-wheel notch zooms, as a
+  percentage of the normal speed.
+
+The values are remembered in the browser's localStorage between visits;
+if storage is unavailable (e.g. private browsing) the settings still
+work, they just reset to the defaults on reload.
 */
 
 import { initPanel } from './panels.js';
 
-const DEFAULT_DOUBLE_CLICK_DELAY_MS = 250;
-const STORAGE_KEY = 'worldMapGame.doubleClickDelayMs';
+const settings = {
+  doubleClickDelayMs: {
+    sliderId: 'double-click-delay',
+    valueId: 'double-click-delay-value',
+    storageKey: 'worldMapGame.doubleClickDelayMs',
+    defaultValue: 250,
+    format: value => `${value} ms`,
+    value: null
+  },
+  scrollZoomPercent: {
+    sliderId: 'scroll-zoom-speed',
+    valueId: 'scroll-zoom-speed-value',
+    storageKey: 'worldMapGame.scrollZoomPercent',
+    defaultValue: 100,
+    format: value => `${value}%`,
+    value: null
+  }
+};
 
-let doubleClickDelayMs = loadDoubleClickDelay();
+for (const setting of Object.values(settings)) setting.value = load(setting);
 
 // Read by handler.js on every click, so slider changes apply immediately.
 export function getDoubleClickDelay() {
-  return doubleClickDelayMs;
+  return settings.doubleClickDelayMs.value;
+}
+
+// Read by the scroll-wheel zoom in main.js on every notch: 100 = normal
+// speed, 200 = twice as far per notch, and so on.
+export function getScrollZoomPercent() {
+  return settings.scrollZoomPercent.value;
 }
 
 export function initSettings() {
   // Opening/closing the panel (shared with the info panel, see panels.js).
   initPanel('settings', 'settings-button', 'settings-panel');
 
-  const slider = document.getElementById('double-click-delay');
-  const valueEl = document.getElementById('double-click-delay-value');
+  for (const setting of Object.values(settings)) initSlider(setting);
+}
+
+function initSlider(setting) {
+  const slider = document.getElementById(setting.sliderId);
+  const valueEl = document.getElementById(setting.valueId);
 
   // Clamp a stored value into the slider's current range, in case the
   // range in index.html was changed since it was saved.
-  doubleClickDelayMs = Math.min(Math.max(doubleClickDelayMs, Number(slider.min)), Number(slider.max));
-  slider.value = doubleClickDelayMs;
-  valueEl.textContent = `${doubleClickDelayMs} ms`;
+  setting.value = Math.min(Math.max(setting.value, Number(slider.min)), Number(slider.max));
+  slider.value = setting.value;
+  valueEl.textContent = setting.format(setting.value);
 
   slider.addEventListener('input', () => {
-    doubleClickDelayMs = Number(slider.value);
-    valueEl.textContent = `${doubleClickDelayMs} ms`;
-    saveDoubleClickDelay(doubleClickDelayMs);
+    setting.value = Number(slider.value);
+    valueEl.textContent = setting.format(setting.value);
+    save(setting);
   });
 }
 
-function loadDoubleClickDelay() {
+function load(setting) {
   try {
-    const stored = Number(localStorage.getItem(STORAGE_KEY));
+    const stored = Number(localStorage.getItem(setting.storageKey));
     if (stored > 0) return stored;
   } catch (err) {
     // Storage blocked — fall back to the default.
   }
-  return DEFAULT_DOUBLE_CLICK_DELAY_MS;
+  return setting.defaultValue;
 }
 
-function saveDoubleClickDelay(value) {
+function save(setting) {
   try {
-    localStorage.setItem(STORAGE_KEY, String(value));
+    localStorage.setItem(setting.storageKey, String(setting.value));
   } catch (err) {
     // Storage blocked — the setting just won't survive a reload.
   }

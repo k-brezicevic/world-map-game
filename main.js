@@ -13,7 +13,7 @@ additional detail while zooming in.
 */
 
 import { adjust } from './adjust.js';
-import { initSettings } from './settings.js';
+import { initSettings, getScrollZoomPercent } from './settings.js';
 import { initPanel, initTabs } from './panels.js';
 import { isInteractive } from './handler.js';
 import { startGame } from './game.js';
@@ -241,9 +241,9 @@ function setupKeyboardNavigation(map) {
 // same target, so fast scrolling keeps one continuous motion instead of
 // restarting with a jolt each time. Zooms towards the mouse pointer.
 function setupSmoothScrollZoom(map) {
-  // Zoom levels per pixel of wheel movement. A typical mouse-wheel notch
-  // is 100px, so 0.005 gives half a zoom level per notch (the +/-
-  // keys do a whole level). Higher number means faster zoom.
+  // Zoom levels per pixel of wheel movement at normal speed. A typical
+  // mouse-wheel notch is 100px, so 0.005 gives half a zoom level per notch.
+  // The "Scroll zoom speed" setting scales this (100% = as here).
   const ZOOM_PER_PIXEL = 0.005;
   // Length of the glide after each notch, in milliseconds.
   const DURATION_MS = 350;
@@ -267,7 +267,7 @@ function setupSmoothScrollZoom(map) {
       : map.getZoom();
     lastWheelTime = now;
 
-    targetZoom = Math.min(Math.max(startZoom - deltaPx * ZOOM_PER_PIXEL, map.getMinZoom()), map.getMaxZoom());
+    targetZoom = Math.min(Math.max(startZoom - deltaPx * ZOOM_PER_PIXEL * getScrollZoomPercent() / 100, map.getMinZoom()), map.getMaxZoom());
 
     const rect = map.getCanvasContainer().getBoundingClientRect();
     const pointer = map.unproject([e.clientX - rect.left, e.clientY - rect.top]);

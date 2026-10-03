@@ -44,6 +44,9 @@ import { initEventHandling, isInteractive } from './handler.js';
 const CORRECT_PAUSE_MS = 800;
 const WRONG_PAUSE_MS = 1500;
 
+// Pause between pressing Start (or Play again) and the first country.
+const START_DELAY_MS = 700;
+
 // After a miss, the asked-for country flashes green this many times (to
 // show where it is), each flash BLINK_MS on and BLINK_MS off, then turns
 // red and stays red. The flashing is part of WRONG_PAUSE_MS, not added
@@ -140,7 +143,15 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     statusEl.hidden = true;
     gameButtons.hidden = false;
     scoreboard.hidden = false;
-    nextCountry();
+    updateScoreboard();
+    // The "World Map Game" title shrinks and fades out (h1.vanish in
+    // page-style.css; cleared when it ends, see below). Meanwhile, a short
+    // pause before the first country, with answering (map and buttons)
+    // locked.
+    titleEl.classList.remove('flash');
+    titleEl.classList.add('vanish');
+    setAnswering(false);
+    setTimeout(nextCountry, START_DELAY_MS);
   }
 
   // The queue is in random order and is taken from its end (pop), so its
@@ -259,7 +270,7 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
   // player notices the new country. Removing the class and forcing a
   // layout restarts the animation even if it's still running.
   function flashTitle() {
-    titleEl.classList.remove('flash');
+    titleEl.classList.remove('flash', 'vanish');
     void titleEl.offsetWidth;
     titleEl.classList.add('flash');
   }
@@ -267,16 +278,35 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
   // Remove the class once the flash is over: during it the title is drawn
   // on its own layer for smooth scaling (see h1.flash), which renders text
   // slightly less crisply, so the name goes back to normal text afterwards.
+  // Once the title has vanished, it's cleared to an invisible space (which
+  // keeps the line's height, so nothing below it moves) until the first
+  // country appears.
   titleEl.addEventListener('animationend', e => {
     if (e.animationName === 'title-flash') titleEl.classList.remove('flash');
+    if (e.animationName === 'title-vanish') {
+      titleEl.textContent = ' ';
+      titleEl.classList.remove('vanish');
+    }
   });
 
   // Remaining = countries in this game not answered yet (including the
   // one currently asked).
   function updateScoreboard() {
-    correctEl.textContent = correct;
-    missedEl.textContent = missed;
-    remainingEl.textContent = names.length - correct - missed;
+    setCount(correctEl, correct, true);
+    setCount(missedEl, missed, true);
+    setCount(remainingEl, names.length - correct - missed, false);
+  }
+
+  // Sets a counter; if `bumpOnIncrease` and the number went up, it briefly
+  // pops (see .score span.bump in page-style.css).
+  function setCount(el, value, bumpOnIncrease) {
+    const increased = value > Number(el.textContent);
+    el.textContent = value;
+    if (bumpOnIncrease && increased) {
+      el.classList.remove('bump');
+      void el.offsetWidth; // restart the animation
+      el.classList.add('bump');
+    }
   }
 
   function setResult(countryId, state) {

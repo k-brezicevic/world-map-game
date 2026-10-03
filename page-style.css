@@ -1,6 +1,7 @@
 :root {
   color-scheme: dark; /* see the matching <meta> in index.html */
   --bg: #16202b;  /* page background, a step brighter than the map (--map-background) */
+  --bg-glow: #1f2d3c;  /* centre of the faint glow at the top of the page */
   --panel: #16212c;
   --ink: #e7edf3;
   --muted: #7c8a99;
@@ -18,6 +19,12 @@
   --slider-thumb-top: #33465a;        /* handle gradient, top */
   --slider-thumb-top-hover: #3d5269;  /* handle gradient, top, on hover */
   --slider-thumb-bottom: #1e2b38;     /* handle gradient, bottom */
+
+  /* Info panel: the raised sheet formed by the selected tab and its content */
+  --sheet-top: #2e4053;     /* top of the selected tab (lighter, lit from above) */
+  --sheet: #1f2c3a;         /* where the tab meets its content */
+  --sheet-bottom: #16202a;  /* bottom of the content */
+  --panel-bottom: #0d141b;  /* bottom of the info panel container (top is --panel) */
 }
 
 * { box-sizing: border-box; }
@@ -29,7 +36,16 @@ html, body {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--bg);
+  /* A faint radial glow, slightly lighter at the top centre (behind the
+     title) and fading into the page colour, for a little depth. Fixed to
+     the window, so it doesn't move if the page scrolls. */
+  background-color: var(--bg);
+  background-image: radial-gradient(
+    ellipse 70% 55% at 50% 0%,
+    var(--bg-glow) 0%,
+    var(--bg) 100%
+  );
+  background-attachment: fixed;
   color: var(--ink);
   min-height: 100vh;
   display: flex;
@@ -46,6 +62,10 @@ h1 {
   margin: 0 0 0.4rem;
   font-size: 1.4rem;
   font-weight: 600;
+  /* Soft drop shadow, as if the name sits slightly above the page. Also
+     the last layer of every step of the title-flash animation, so it
+     stays in place while the name flashes. */
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.7);
 }
 
 /* Info icon after a territory's name in the title (added by game.js),
@@ -138,17 +158,19 @@ h1.flash {
     color: var(--map-selected);
     transform: scale3d(1.15, 1.15, 1);
     text-shadow:
-      0 0 4px rgba(232, 163, 61, 1),
-      0 0 14px rgba(232, 163, 61, 0.9),
-      0 0 32px rgba(232, 163, 61, 0.75);
+      0 0 4px rgba(232, 163, 61, 0.8),
+      0 0 14px rgba(232, 163, 61, 0.65),
+      0 0 32px rgba(232, 163, 61, 0.5),
+      0 3px 6px rgba(0, 0, 0, 0.7);
   }
   45% {
     color: var(--ink);
     transform: scale3d(1, 1, 1);
     text-shadow:
-      0 0 4px rgba(232, 163, 61, 0.7),
-      0 0 14px rgba(232, 163, 61, 0.6),
-      0 0 32px rgba(232, 163, 61, 0.45);
+      0 0 4px rgba(232, 163, 61, 0.55),
+      0 0 14px rgba(232, 163, 61, 0.45),
+      0 0 32px rgba(232, 163, 61, 0.3),
+      0 3px 6px rgba(0, 0, 0, 0.7);
   }
   100% {
     color: var(--ink);
@@ -156,7 +178,8 @@ h1.flash {
     text-shadow:
       0 0 4px rgba(232, 163, 61, 0),
       0 0 14px rgba(232, 163, 61, 0),
-      0 0 32px rgba(232, 163, 61, 0);
+      0 0 32px rgba(232, 163, 61, 0),
+      0 3px 6px rgba(0, 0, 0, 0.7);
   }
 }
 
@@ -167,21 +190,65 @@ h1.flash {
     0% {
       color: var(--map-selected);
       text-shadow:
-        0 0 6px rgba(232, 163, 61, 0.9),
-        0 0 22px rgba(232, 163, 61, 0.7);
+        0 0 6px rgba(232, 163, 61, 0.7),
+        0 0 22px rgba(232, 163, 61, 0.5),
+        0 3px 6px rgba(0, 0, 0, 0.7);
     }
     45% {
       color: var(--ink);
       text-shadow:
-        0 0 6px rgba(232, 163, 61, 0.5),
-        0 0 22px rgba(232, 163, 61, 0.4);
+        0 0 6px rgba(232, 163, 61, 0.35),
+        0 0 22px rgba(232, 163, 61, 0.3),
+        0 3px 6px rgba(0, 0, 0, 0.7);
     }
     100% {
       color: var(--ink);
       text-shadow:
         0 0 6px rgba(232, 163, 61, 0),
-        0 0 22px rgba(232, 163, 61, 0);
+        0 0 22px rgba(232, 163, 61, 0),
+        0 3px 6px rgba(0, 0, 0, 0.7);
     }
+  }
+}
+
+/* The "World Map Game" title leaving when Start is pressed (added by
+   game.js): the reverse of the country-name flash - it shrinks, turns
+   orange with the glow, and fades out. Same smooth-scaling hints as
+   h1.flash. */
+h1.vanish {
+  animation: title-vanish 400ms ease-in forwards;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+@keyframes title-vanish {
+  0% {
+    opacity: 1;
+    color: var(--ink);
+    transform: scale3d(1, 1, 1);
+    text-shadow:
+      0 0 4px rgba(232, 163, 61, 0),
+      0 0 14px rgba(232, 163, 61, 0),
+      0 0 32px rgba(232, 163, 61, 0),
+      0 3px 6px rgba(0, 0, 0, 0.7);
+  }
+  100% {
+    opacity: 0;
+    color: var(--map-selected);
+    transform: scale3d(0.6, 0.6, 1);
+    text-shadow:
+      0 0 4px rgba(232, 163, 61, 0.8),
+      0 0 14px rgba(232, 163, 61, 0.65),
+      0 0 32px rgba(232, 163, 61, 0.5),
+      0 3px 6px rgba(0, 0, 0, 0.7);
+  }
+}
+
+/* Reduced motion: just fades out, without shrinking. */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes title-vanish {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
   }
 }
 
@@ -413,7 +480,7 @@ main {
   z-index: 10; /* above the map */
   display: flex;
   align-items: center;
-  gap: 1.1rem;
+  gap: 1rem; /* space before each divider; the same again after it (padding) */
   height: 44px;
   padding: 0 1rem;
   background: linear-gradient(to bottom, var(--button-top), var(--panel));
@@ -440,12 +507,39 @@ main {
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums; /* digits don't jump as they change */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7); /* soft drop shadow */
 }
 
 .score svg {
   width: 22px;
   height: 22px;
   flex-shrink: 0;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.7)); /* matches the numbers */
+}
+
+/* Thin engraved dividers between the scoreboard's counters: a dark line
+   with a faint light line beside it, as if cut into the raised pill. */
+#scoreboard .score + .score {
+  padding-left: 1rem;
+  border-left: 1px solid rgba(0, 0, 0, 0.45);
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+/* A counter going up briefly pops a little larger (class added by
+   game.js), as feedback that the answer counted. */
+.score span.bump {
+  display: inline-block;
+  animation: score-bump 350ms ease-out;
+}
+
+@keyframes score-bump {
+  40% { transform: scale(1.3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .score span.bump {
+    animation: none;
+  }
 }
 
 /* Icon colours match the answer colours on the map (map-style.css). */
@@ -616,45 +710,65 @@ main {
    one button (40px + 8px gap) left of the edge, so it's shifted right
    by that much to line up with the settings panel's right edge. */
 #info-panel {
-  width: 360px;
+  width: 390px;
   max-width: calc(100vw - 2rem);
   right: -48px;
   max-height: calc(100vh - 6rem);
   overflow-y: auto;
   font-size: 0.875rem;
   line-height: 1.45;
+  /* The container for the tabs and their raised sheet: darker than the
+     sheet so it stands out (see the tab rules below), with a gradient
+     like the sheet's, from the panel colour at the top to darker at the
+     bottom. */
+  background: linear-gradient(to bottom, var(--panel), var(--panel-bottom));
 }
 
-/* Tabs ("How to Play", "Countries and Territories") along the top of the
-   panel: the selected tab is bright with an orange underline, the other
-   muted; a thin line runs under the whole row. */
+/* Tabs ("How to Play", "Countries and Territories") as a card file:
+   - the outer info panel is a plain container (#info-panel above);
+   - the selected tab and its content form one raised "sheet": the same
+     lighter fill, one outline (lighter along the top), and no line where
+     the tab meets the content, so they read as a single piece;
+   - the other tab is recessed: darker than the container, with a soft
+     inner shadow at the top, muted text, sitting on the sheet's top edge.
+   The tab overlaps the sheet's top border by 1px and covers it with its
+   own fill, which is what joins the two. */
 #info-panel .tabs {
+  position: relative;
+  z-index: 1; /* tabs above the sheet's top border */
   display: flex;
-  gap: 1.1rem;
-  margin: -0.25rem 0 0.85rem;
-  border-bottom: 1px solid var(--border);
+  gap: 4px;
+  margin-top: -0.25rem;
 }
 
 #info-panel [role="tab"] {
-  margin-bottom: -1px; /* underline sits on the row's line */
-  padding: 0.35rem 0 0.5rem;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--muted);
+  margin-bottom: -1px;
+  padding: 0.4rem 0.85rem;
+  /* Top part of the sheet gradient: lighter at the top, reaching the
+     shared --sheet colour at its bottom edge, where the content begins. */
+  background: linear-gradient(to bottom, var(--sheet-top), var(--sheet));
+  border: 1px solid var(--button-outline);
+  border-top-color: var(--button-edge-light);
+  border-bottom-color: var(--sheet);
+  border-radius: 7px 7px 0 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--ink);
   font: inherit;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
 }
 
-#info-panel [role="tab"]:hover {
-  color: var(--ink);
+#info-panel [role="tab"][aria-selected="false"] {
+  background: var(--slider-groove);
+  border-color: var(--button-outline);
+  border-bottom-color: var(--button-outline);
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.4);
+  color: var(--muted);
 }
 
-#info-panel [role="tab"][aria-selected="true"] {
+#info-panel [role="tab"][aria-selected="false"]:hover {
   color: var(--ink);
-  border-bottom-color: var(--map-selected);
 }
 
 #info-panel [role="tab"]:focus {
@@ -663,12 +777,24 @@ main {
 
 #info-panel [role="tab"]:focus-visible {
   outline: 2px solid var(--ink);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline-offset: -3px;
+  border-radius: 7px 7px 0 0;
+}
+
+/* The sheet under the tabs: the selected tab's content. Square top-left
+   corner, where the first tab sits. */
+#info-panel .tabpanel {
+  padding: 0.8rem 0.9rem 0.7rem;
+  /* Continues the selected tab's gradient: from the shared --sheet colour
+     at the top to slightly darker at the bottom. */
+  background: linear-gradient(to bottom, var(--sheet), var(--sheet-bottom));
+  border: 1px solid var(--button-outline);
+  border-radius: 0 7px 7px 7px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 #info-panel .tabpanel > :last-child {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0;
 }
 
 #info-panel p {
@@ -708,17 +834,24 @@ main {
   font-size: 0.95rem;
 }
 
+/* Each setting in the panel; a thin line separates them. */
+#settings-panel .setting + .setting {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
 .settings-hint {
   margin: 0.25rem 0 0.75rem;
   color: var(--muted);
   font-size: 0.8rem;
 }
 
-/* Double-click interval slider: a recessed groove (like the map) with a
+/* Settings sliders: a recessed groove (like the map) with a
    raised handle (like the settings button). Browsers need the track
    and handle styled separately for Chrome/Edge (-webkit-) and
    Firefox (-moz-); the two sets of rules are otherwise identical. */
-#double-click-delay {
+#settings-panel input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   display: block;
@@ -729,7 +862,7 @@ main {
   cursor: pointer;
 }
 
-#double-click-delay::-webkit-slider-runnable-track {
+#settings-panel input[type="range"]::-webkit-slider-runnable-track {
   height: 8px;
   background: var(--slider-groove);
   border-radius: 4px;
@@ -738,7 +871,7 @@ main {
     0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-#double-click-delay::-moz-range-track {
+#settings-panel input[type="range"]::-moz-range-track {
   height: 8px;
   background: var(--slider-groove);
   border-radius: 4px;
@@ -747,7 +880,7 @@ main {
     0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-#double-click-delay::-webkit-slider-thumb {
+#settings-panel input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   box-sizing: border-box; /* include the 1px border in the 18px */
   width: 18px;
@@ -763,7 +896,7 @@ main {
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-#double-click-delay::-moz-range-thumb {
+#settings-panel input[type="range"]::-moz-range-thumb {
   box-sizing: border-box;
   width: 18px;
   height: 18px;
@@ -777,25 +910,25 @@ main {
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-#double-click-delay:hover::-webkit-slider-thumb {
+#settings-panel input[type="range"]:hover::-webkit-slider-thumb {
   background: linear-gradient(to bottom, var(--slider-thumb-top-hover), var(--slider-thumb-bottom));
 }
 
-#double-click-delay:hover::-moz-range-thumb {
+#settings-panel input[type="range"]:hover::-moz-range-thumb {
   background: linear-gradient(to bottom, var(--slider-thumb-top-hover), var(--slider-thumb-bottom));
 }
 
 /* Keyboard focus: same ring as the buttons, around the handle. */
-#double-click-delay:focus {
+#settings-panel input[type="range"]:focus {
   outline: none;
 }
 
-#double-click-delay:focus-visible::-webkit-slider-thumb {
+#settings-panel input[type="range"]:focus-visible::-webkit-slider-thumb {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
-#double-click-delay:focus-visible::-moz-range-thumb {
+#settings-panel input[type="range"]:focus-visible::-moz-range-thumb {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
@@ -808,7 +941,7 @@ main {
   font-size: 0.8rem;
 }
 
-#double-click-delay-value {
+.settings-scale output {
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
