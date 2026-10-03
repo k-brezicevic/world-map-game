@@ -737,10 +737,10 @@ main {
   font-weight: 600;
 }
 
-/* Countries and Territories tab: the descriptions after the names (e.g.
-   "– the two UN observer states") in the same grey as the intro line;
-   the bold names stay white (rule above). */
-#tabpanel-countries li {
+/* List text in both tabs (e.g. "– the two UN observer states") in the
+   same grey as the intro line; bold text stays white (rule above). */
+#tabpanel-countries li,
+#tabpanel-how-to-play li {
   color: #a7b2be;
 }
 
