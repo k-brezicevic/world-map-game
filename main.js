@@ -122,6 +122,16 @@ async function main() {
   map.scrollZoom.disable();
   setupSmoothScrollZoom(map);
 
+  // Mouse drag: after letting go, the map keeps gliding and eases to a
+  // stop, like after releasing an arrow key. MapLibre does this already;
+  // these settings make the glide carry further and slow down more gently
+  // (its defaults: deceleration 2500 px/s², maxSpeed 1400 px/s).
+  map.dragPan.enable({
+    linearity: 0.5,    // how much of the drag's speed carries into the glide (default 0.3)
+    deceleration: 1200, // px/s²: lower = a longer glide
+    maxSpeed: 1800     // px/s: the fastest glide after a quick flick
+  });
+
   // Keep the map north-up: no two-finger twist on touchscreens.
   // Pinch-zoom still works.
   map.touchZoomRotate.disableRotation();
