@@ -129,7 +129,8 @@ async function main() {
     titleEl: document.querySelector('header h1'),
     statusEl,
     startButton: document.getElementById('start-button'),
-    scoreboard: document.getElementById('scoreboard')
+    scoreboard: document.getElementById('scoreboard'),
+    results: document.getElementById('results')
   }));
 
   // Error handling in case map loading fails.
@@ -222,9 +223,9 @@ function buildStyle(countriesData, lakesData) {
     ['boolean', ['feature-state', 'selected'], false],
     getMapColor('--map-selected'),   // selected color (single click) — currently highlighted
     ['boolean', ['feature-state', 'found'], false],
-    getMapColor('--map-found'),      // answered correctly earlier this round (darker green)
+    getMapColor('--map-found'),      // answered correctly earlier in the game (darker green)
     ['boolean', ['feature-state', 'missed'], false],
-    getMapColor('--map-missed'),     // missed earlier this round (darker red)
+    getMapColor('--map-missed'),     // missed earlier in the game (darker red)
     ['boolean', ['feature-state', 'hover'], false],
     getMapColor('--map-land-hover'), // hover color — only shown on otherwise unselected countries
     getMapColor('--map-land')        // default land color

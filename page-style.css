@@ -193,6 +193,7 @@ main {
    the map's zoom in/out buttons (MapLibre's NavigationControl). The #map
    prefix gives these rules enough specificity to override maplibre-gl.css. */
 #start-button,
+.results-buttons button,
 #info-button,
 #settings-button,
 #map .maplibregl-ctrl-group button {
@@ -222,6 +223,7 @@ main {
 }
 
 #start-button:hover,
+.results-buttons button:hover,
 #info-button:hover,
 #info-button[aria-expanded="true"],
 #settings-button:hover,
@@ -234,6 +236,7 @@ main {
 /* Pressed: the gradient flips and the shadow tightens, and the button
    shifts down 1px, so it looks pushed in. */
 #start-button:active,
+.results-buttons button:active,
 #info-button:active,
 #settings-button:active,
 #map .maplibregl-ctrl-group button:not(:disabled):active {
@@ -245,6 +248,7 @@ main {
 }
 
 #start-button:focus-visible,
+.results-buttons button:focus-visible,
 #info-button:focus-visible,
 #settings-button:focus-visible,
 #map .maplibregl-ctrl-group button:focus-visible {
@@ -267,6 +271,17 @@ main {
 
 #start-button[hidden] {
   display: none;
+}
+
+/* Results card buttons: text buttons like Start, side by side. */
+.results-buttons button {
+  width: auto;
+  height: 38px;
+  padding: 0 1.4rem;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 /* Scoreboard, top-left of the page (mirroring the buttons on the right):
@@ -322,6 +337,97 @@ main {
 .score-correct svg   { color: var(--map-correct); }
 .score-missed svg    { color: var(--map-wrong); }
 .score-remaining svg { color: var(--button-icon); }
+
+/* Results card, shown over the map when a game ends. #results covers the
+   whole map with a light dimming (a click on it closes the card) and
+   centres the card on it. */
+#results {
+  position: absolute;
+  inset: 0;
+  z-index: 5; /* above the map, its controls and the inner-shadow overlay */
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(8, 12, 18, 0.45);
+  border-radius: inherit;
+  animation: results-fade 250ms ease-out;
+}
+
+#results[hidden] {
+  display: none;
+}
+
+/* The card: same raised style as the info and settings panels. */
+.results-card {
+  width: min(340px, 100%);
+  padding: 1.5rem 1.5rem 1.25rem;
+  text-align: center;
+  background: linear-gradient(to bottom, var(--button-top), var(--panel) 160px);
+  border: 1px solid var(--button-outline);
+  border-top-color: var(--button-edge-light);
+  border-bottom-color: var(--button-edge-dark);
+  border-radius: 10px;
+  box-shadow:
+    6px 10px 24px rgba(0, 0, 0, 0.5),
+    3px 4px 10px rgba(0, 0, 0, 0.4),
+    1px 1px 2px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: results-pop 250ms ease-out;
+}
+
+.results-card h2 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* The big number: the percentage answered correctly. */
+.results-percent {
+  margin: 0.4rem 0 0;
+  color: var(--ink);
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.results-detail {
+  margin: 0.2rem 0 0;
+  color: #a7b2be;
+  font-size: 0.95rem;
+}
+
+/* Correct / missed counts, styled like the scoreboard's. */
+.results-counts {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.results-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+@keyframes results-fade {
+  from { opacity: 0; }
+}
+
+@keyframes results-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+}
+
+/* Reduced motion: fade only, no movement. */
+@media (prefers-reduced-motion: reduce) {
+  .results-card {
+    animation: results-fade 250ms ease-out;
+  }
+}
 
 /* Wide windows: the scoreboard sits in the top-left corner, so keep the
    centred title (long names like "Saint Vincent and the Grenadines")

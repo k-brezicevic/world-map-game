@@ -3,8 +3,12 @@ The game: shows the name of a country in the page title, waits for the
 player to double-click a country on the map, marks the answer and then
 moves on to the next country. It begins when the player presses Start.
 
-- Countries come in a random order without repeats; after all of them,
-  a new round starts in a fresh order.
+- Countries come in a random order without repeats. After all of them,
+  the game ends: a results card over the map shows the percentage
+  answered correctly and the counts, with "Play again" and "View map"
+  buttons. The scoreboard and map colours stay as they are, and the
+  title goes back to "World Map Game" with a "Play again" button under
+  it (for when the card has been closed). A new game uses a fresh order.
 - Final colours: green = asked for and found, red = asked for and missed.
 - Correct answer: the country turns green.
 - Wrong answer: the asked-for country flashes green three times (to show
@@ -14,11 +18,11 @@ moves on to the next country. It begins when the player presses Start.
   to see, a ring marks where it is (flashing green, then red).
 - Clicks are ignored while a result is shown, then the next country
   appears.
-- The scoreboard (top-left) shows, for the current round, the number of
-  correct answers, misses and countries remaining.
+- The scoreboard (top-left) shows the number of correct answers, misses
+  and countries remaining in the game.
 - Answered countries keep their colour (slightly darker) for the rest of
-  the round. The wrong pick goes back to normal, since it wasn't the
-  question. A new round clears them all.
+  the game. The wrong pick goes back to normal, since it wasn't the
+  question. A new game clears them all.
 
 Map colour states used (see countryColor in main.js):
   correct / wrong  - the asked-for country while its result is shown
@@ -26,7 +30,7 @@ Map colour states used (see countryColor in main.js):
                      "correct" first, then settles on "wrong")
   picked           - the player's wrong pick while the result is shown
                      (orange)
-  found / missed   - countries answered earlier this round (darker)
+  found / missed   - countries answered earlier in the game (darker)
 */
 
 import { initEventHandling, isInteractive } from './handler.js';
@@ -46,12 +50,14 @@ const BLINK_MS = 150;
 Sets up the game once the map has loaded and shows the Start button;
 the first country appears when the player presses it.
   titleEl:     the page title, which shows the country to find
-  statusEl:    the line under it (the round number, from round 2)
-  startButton: the Start button (hidden until the game is ready)
+  statusEl:    the line under it (the result, when the game ends)
+  startButton: the Start button (hidden until the game is ready); it
+               returns as "Play again" when the game ends
   scoreboard:  the top-left counters (#score-correct, #score-missed,
                #score-remaining), hidden until the game starts
+  results:     the results card shown over the map when the game ends
 */
-export function startGame(map, countriesData, { titleEl, statusEl, startButton, scoreboard }) {
+export function startGame(map, countriesData, { titleEl, statusEl, startButton, scoreboard, results }) {
   // One entry per country. Small countries also have a marker point with
   // the same name (see adjust.js), which is skipped here.
   const countries = countriesData.features
@@ -64,8 +70,6 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
 
   let queue = [];
   let target = null;
-  let round = 1;
-  // Counts for the current round (reset when a new round starts).
   let correct = 0;
   let missed = 0;
 
@@ -75,35 +79,100 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
 
   // Until Start is pressed, the map can be explored but not answered, and
   // the header shows just the title and the Start button (the status line
-  // is hidden, so it doesn't leave an empty gap).
+  // is hidden, so it doesn't leave an empty gap). The same button returns
+  // as "Play again" when a game ends.
   input.setLocked(true);
   statusEl.hidden = true;
   startButton.hidden = false;
-  startButton.addEventListener('click', () => {
+  startButton.addEventListener('click', newGame);
+
+  // Results card: "Play again" starts a new game; "View map", a click on
+  // the dimmed map around the card, or Escape closes it to show the map.
+  results.querySelector('#results-play-again').addEventListener('click', newGame);
+  results.querySelector('#results-view-map').addEventListener('click', hideResults);
+  results.addEventListener('click', e => {
+    if (e.target === results) hideResults();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !results.hidden) hideResults();
+  });
+
+  // Starts a game: clears the colours and scores of any previous game and
+  // asks all countries again, in a fresh random order.
+  function newGame() {
+    for (const name of names) setResult(name, { found: false, missed: false });
+    correct = 0;
+    missed = 0;
+    queue = shuffle([...names]);
+    preAnswerForTesting();
+    hideResults();
     startButton.hidden = true;
+    statusEl.textContent = '';
     statusEl.hidden = false;
     scoreboard.hidden = false;
     nextCountry();
-  }, { once: true });
+  }
 
   function nextCountry() {
     if (queue.length === 0) {
-      if (correct + missed > 0) {
-        // New round: reset the counts and clear the found/missed colours
-        // of the last one.
-        round++;
-        correct = 0;
-        missed = 0;
-        for (const name of names) setResult(name, { found: false, missed: false });
-      }
-      queue = shuffle([...names]);
+      finishGame();
+      return;
     }
     target = queue.pop();
     titleEl.textContent = target;
     flashTitle();
-    statusEl.textContent = round > 1 ? `Round ${round}` : '';
     updateScoreboard();
     input.setLocked(false);
+  }
+
+  // TESTING ONLY: open the page with ?skip=N in the address (e.g.
+  // index.html?skip=200) to start each game with N countries already
+  // answered (about 70% correct, 30% missed, at random), so the end of
+  // the game can be reached quickly. Without the parameter, nothing
+  // happens.
+  function preAnswerForTesting() {
+    const skip = Number(new URLSearchParams(location.search).get('skip'));
+    if (!(skip > 0)) return;
+    const count = Math.min(Math.floor(skip), queue.length - 1);
+    for (let i = 0; i < count; i++) {
+      const name = queue.pop();
+      const found = Math.random() < 0.7;
+      if (found) correct++; else missed++;
+      setResult(name, { found, missed: !found });
+    }
+    console.warn(`Testing: ${count} countries pre-answered (?skip=${skip}).`);
+  }
+
+  // All countries answered: keep the final scores and map colours, show
+  // the share answered correctly, and offer to play again.
+  function finishGame() {
+    target = null;
+    const percent = Math.round(correct / names.length * 100);
+    // Back to the game's name, as before the first game (the result is on
+    // the results card).
+    titleEl.textContent = 'World Map Game';
+    statusEl.textContent = '';
+    statusEl.hidden = true;
+    updateScoreboard();
+    // Stays under the title, for when the results card has been closed.
+    startButton.textContent = 'Play again';
+    startButton.hidden = false;
+    showResults(percent);
+  }
+
+  // Results card over the map (see #results in index.html).
+  function showResults(percent) {
+    results.querySelector('#results-percent').textContent = `${percent}%`;
+    results.querySelector('#results-detail').textContent =
+      `${correct} out of ${names.length} countries`;
+    results.querySelector('#results-correct').textContent = correct;
+    results.querySelector('#results-missed').textContent = missed;
+    results.hidden = false;
+    results.querySelector('#results-play-again').focus();
+  }
+
+  function hideResults() {
+    results.hidden = true;
   }
 
   function answer(guess) {
@@ -125,7 +194,7 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     const shown = target;
     setTimeout(() => {
       // End of the reveal: the asked country keeps its result colour for
-      // the rest of the round (same colour, slightly darker); the wrong
+      // the rest of the game (same colour, slightly darker); the wrong
       // pick goes back to normal.
       setResult(shown, { correct: false, wrong: false, found: isCorrect, missed: !isCorrect });
       if (!isCorrect) setResult(guess, { picked: false });
@@ -143,7 +212,7 @@ export function startGame(map, countriesData, { titleEl, statusEl, startButton, 
     titleEl.classList.add('flash');
   }
 
-  // Remaining = countries in this round not answered yet (including the
+  // Remaining = countries in this game not answered yet (including the
   // one currently asked).
   function updateScoreboard() {
     correctEl.textContent = correct;

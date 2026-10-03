@@ -56,6 +56,7 @@
         </svg>
         <span id="score-missed" aria-label="Misses">0</span>
       </span>
+      <!-- Countries remaining (0 when the game ends). -->
       <span class="score score-remaining" title="Countries remaining">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -87,10 +88,10 @@
           <h2>What counts as a country?</h2>
           <p>This map treats 202 areas as countries:</p>
           <ul>
-            <li><strong>All 193 member states of the United Nations.</strong></li>
+            <li><strong>All 193 member states of the United Nations</strong>,</li>
             <li><strong>Palestine</strong> and <strong>Vatican City</strong> &ndash; the two UN observer states,</li>
             <li><strong>Taiwan</strong> &ndash; de facto sovereign state,</li>
-            <li><strong>Kosovo</strong> &ndash; sovereign state with wide recognition,</li>
+            <li><strong>Kosovo</strong> &ndash; widely recognized sovereign state,</li>
             <li><strong>Greenland, Puerto Rico, Falkland Islands, French Guiana</strong> and <strong>New Caledonia</strong> &ndash; larger territories with distinct geographic identity.</li>
           </ul>
         </div>
@@ -126,6 +127,36 @@
   <main>
     <div id="map-wrapper">
       <div id="map"></div>
+
+      <!-- Results card, shown over the (lightly dimmed) map when a game
+           ends. Filled in and wired up by game.js. -->
+      <div id="results" hidden>
+        <div class="results-card" role="dialog" aria-labelledby="results-heading">
+          <h2 id="results-heading">Game complete</h2>
+          <p id="results-percent" class="results-percent">0%</p>
+          <p id="results-detail" class="results-detail">0 out of 0 countries</p>
+          <div class="results-counts">
+            <span class="score score-correct" title="Correct answers">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+                   stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 12.5l5 5L20 6.5"/>
+              </svg>
+              <span id="results-correct" aria-label="Correct answers">0</span>
+            </span>
+            <span class="score score-missed" title="Misses">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+                   stroke-width="3" stroke-linecap="round">
+                <path d="M6 6l12 12M18 6L6 18"/>
+              </svg>
+              <span id="results-missed" aria-label="Misses">0</span>
+            </span>
+          </div>
+          <div class="results-buttons">
+            <button id="results-play-again" type="button">Play again</button>
+            <button id="results-view-map" type="button">View map</button>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 

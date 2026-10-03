@@ -16,6 +16,6 @@ retheme the map without touching main.js at all.
   --map-selected: #e8a33d;    /* single-click highlight (orange) */
   --map-correct: #3fae5a;     /* asked-for country, found (green), while the result is shown */
   --map-wrong: #d0564e;       /* asked-for country, missed (red), while the result is shown */
-  --map-found: #2e7d45;       /* answered correctly earlier this round (darker green) */
-  --map-missed: #94413c;      /* missed earlier this round (darker red) */
+  --map-found: #2e7d45;       /* answered correctly earlier in the game (darker green) */
+  --map-missed: #94413c;      /* missed earlier in the game (darker red) */
 }
