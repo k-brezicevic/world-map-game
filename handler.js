@@ -143,7 +143,10 @@ export function initEventHandling(map, { onConfirm }) {
       setHovered(null);
       return;
     }
-    map.getCanvas().style.cursor = locked ? '' : 'pointer';
+    // Pointing finger over a country at all times (also before a game and
+    // between answers, when clicks are ignored); MapLibre's open hand
+    // (drag the map) everywhere else.
+    map.getCanvas().style.cursor = 'pointer';
     setHovered(feature.id);
   });
   map.on('mouseleave', INTERACTIVE_LAYERS, () => {

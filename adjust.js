@@ -377,9 +377,12 @@ function removeCountries(geojson) {
     used for display.
 */
 /*
-    Adds a marker point for every country that's too small to click on
-    the map at some zoom levels (e.g. Vatican, Monaco, Nauru, most
-    Caribbean islands; at world zoom also mid-sized ones like Belgium).
+    Adds a marker point for every small country that's too small to
+    click on the map at some zoom levels (e.g. Vatican, Monaco, Nauru,
+    Luxembourg, most Caribbean islands). Only countries whose largest
+    piece of land is under MAX_KM2 count as small: bigger ones (e.g.
+    Jamaica, Montenegro, Kosovo, Cyprus) are clickable enough once
+    zoomed in a little, and a circle for them looks out of place.
     main.js gives these points a click circle, so the country can be
     clicked there, and the point acts as the country itself: it copies
     the country's properties, so it shares the country's map id (its
@@ -389,10 +392,14 @@ function removeCountries(geojson) {
     "markerUntilZoom" property is the zoom level at which that piece
     grows to TINY_PX across on screen; below that zoom main.js keeps the
     circle active, above it the real shape is big enough to click.
-    Countries already at least that big at the lowest zoom get no point.
+    Countries that would never get a circle get no point: main.js only
+    shows one while the country is still tiny half a zoom level above the
+    current whole zoom level, so it needs markerUntilZoom above the
+    lowest zoom + 0.5.
 */
 function addSmallCountryMarkers(geojson) {
     const TINY_PX = 10;      // "too small to click": under this many pixels across
+    const MAX_KM2 = 5000;    // only countries with a smaller largest piece of land
     const MIN_ZOOM = 1;      // the map's lowest zoom (main.js)
     const EARTH_KM = 40075;  // the equator's length
     const WORLD_PX = 512;    // the world's width in pixels at zoom 0 (MapLibre)
@@ -412,7 +419,7 @@ function addSmallCountryMarkers(geojson) {
             const km2 = turf.area(polygon) / 1e6;
             if (km2 > pieceKm2) { piece = polygon; pieceKm2 = km2; }
         }
-        if (!piece) continue;
+        if (!piece || pieceKm2 >= MAX_KM2) continue;
 
         // Its centre, or another point inside it if the centre falls
         // outside (e.g. a crescent-shaped island).
@@ -427,7 +434,7 @@ function addSmallCountryMarkers(geojson) {
         const widthKm = Math.sqrt(pieceKm2);
         const kmPerPxAtZoom0 = EARTH_KM * Math.cos(lat * Math.PI / 180) / WORLD_PX;
         const markerUntilZoom = Math.log2(TINY_PX * kmPerPxAtZoom0 / widthKm);
-        if (markerUntilZoom <= MIN_ZOOM) continue;
+        if (markerUntilZoom <= MIN_ZOOM + 0.5) continue;
 
         markers.push({
             type: 'Feature',

@@ -343,14 +343,16 @@ function buildStyle(countriesData, lakesData) {
   // Small-country circles (marker points, see addSmallCountryMarkers in
   // adjust.js): active only while the country is still too tiny to click
   // as its real shape, i.e. below its markerUntilZoom. MapLibre only lets
-  // a radius depend on the zoom through a top-level "step", so this
-  // checks each whole zoom level (from 0 to MARKER_LAST_ZOOM) and gives
-  // the radius there, or 0 (no circle) once the country is big enough.
+  // a size depend on the zoom through a top-level "step", so this checks
+  // each whole zoom level (from 0 to MARKER_LAST_ZOOM) and gives the size
+  // there (a radius or outline width, in pixels), or 0 once the country is
+  // big enough. Both the radius and the outline need it: a circle of
+  // radius 0 with an outline would still show as a dot.
   const MARKER_LAST_ZOOM = 14;
-  const radiusWhileTiny = radiusPx => {
-    const steps = ['step', ['zoom'], ['case', ['>', ['get', 'markerUntilZoom'], 0.5], radiusPx, 0]];
+  const whileTiny = size => {
+    const steps = ['step', ['zoom'], ['case', ['>', ['get', 'markerUntilZoom'], 0.5], size, 0]];
     for (let zoom = 1; zoom <= MARKER_LAST_ZOOM; zoom++) {
-      steps.push(zoom, ['case', ['>', ['get', 'markerUntilZoom'], zoom + 0.5], radiusPx, 0]);
+      steps.push(zoom, ['case', ['>', ['get', 'markerUntilZoom'], zoom + 0.5], size, 0]);
     }
     return steps;
   };
@@ -372,6 +374,20 @@ function buildStyle(countriesData, lakesData) {
       ['boolean', ['feature-state', 'hover'], false]], 1,
     0
   ];
+
+  // The hovered country gets an outline (feature-state "hover", set in
+  // handler.js), but not once it's selected: it's then orange all over.
+  const hoverOutlined = ['all',
+    ['boolean', ['feature-state', 'hover'], false],
+    ['!', ['boolean', ['feature-state', 'selected'], false]]];
+
+  // Small-country circles: a thin dark edge, or while hovered an outline
+  // like the country shapes' (see countries-hover-outline), a little
+  // brighter so it shows on such a small circle.
+  const markerStroke = {
+    'circle-stroke-color': ['case', hoverOutlined, getMapColor('--map-marker-hover-outline'), getMapColor('--map-outline')],
+    'circle-stroke-width': ['case', hoverOutlined, 1.5, 1]
+  };
 
   return {
     version: 8,
@@ -425,25 +441,18 @@ function buildStyle(countriesData, lakesData) {
           'line-width': 0.6
         }
       },
-      // The outline of the country under the mouse, in the selection orange
-      // and thicker, so it's clear exactly which country is hovered (e.g.
-      // between similar-sized neighbours). Only the hovered country's line
-      // shows (feature-state "hover", set in handler.js), and not once it's
-      // selected: the country is then orange all over anyway.
+      // The outline of the country under the mouse, a little brighter than
+      // its hover fill and thicker, so it's clear exactly which country is
+      // hovered (e.g. between similar-sized neighbours). Only shown for the
+      // hovered country (see hoverOutlined above).
       {
         id: 'countries-hover-outline',
         type: 'line',
         source: 'countries',
         paint: {
-          'line-color': getMapColor('--map-selected'), // the selection orange
+          'line-color': getMapColor('--map-hover-outline'),
           'line-width': 1.5,
-          'line-opacity': [
-            'case',
-            ['all',
-              ['boolean', ['feature-state', 'hover'], false],
-              ['!', ['boolean', ['feature-state', 'selected'], false]]], 1,
-            0
-          ]
+          'line-opacity': ['case', hoverOutlined, 1, 0]
         }
       },
       // Small countries (e.g. Vatican City, Nauru) shown as a circle in the
@@ -456,10 +465,10 @@ function buildStyle(countriesData, lakesData) {
         filter: ['==', ['geometry-type'], 'Point'],
         paint: {
           'circle-color': countryColor,
-          'circle-radius': radiusWhileTiny(5), // pixels
+          'circle-radius': whileTiny(5), // pixels
           'circle-opacity': markerOpacity,
-          'circle-stroke-color': getMapColor('--map-outline'),
-          'circle-stroke-width': 1,
+          ...markerStroke,
+          'circle-stroke-width': whileTiny(markerStroke['circle-stroke-width']),
           'circle-stroke-opacity': markerOpacity
         }
       },
@@ -479,8 +488,7 @@ function buildStyle(countriesData, lakesData) {
         paint: {
           'circle-color': countryColor,
           'circle-radius': 5, // pixels
-          'circle-stroke-color': getMapColor('--map-outline'),
-          'circle-stroke-width': 1
+          ...markerStroke
         }
       },
       // Invisible, slightly larger click/hover area around each small
@@ -493,7 +501,7 @@ function buildStyle(countriesData, lakesData) {
         source: 'countries',
         filter: ['==', ['geometry-type'], 'Point'],
         paint: {
-          'circle-radius': radiusWhileTiny(7), // pixels
+          'circle-radius': whileTiny(7), // pixels
           'circle-opacity': 0
         }
       }

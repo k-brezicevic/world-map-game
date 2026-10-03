@@ -13,6 +13,8 @@ retheme the map without touching main.js at all.
   --map-land: #33465a;        /* default, unselected country fill */
   --map-land-hover: #526a83;  /* fill of an unselected country under the mouse */
   --map-outline: #0f1720;     /* country border lines */
+  --map-hover-outline: #6f8aa6; /* outline of the country under the mouse: the hover fill, a little brighter */
+  --map-marker-hover-outline: #8ea7c0; /* the same for a small-country circle, a little brighter still */
   --map-selected: #e8a33d;    /* single-click highlight (orange) */
   --map-correct: #3fae5a;     /* asked-for country, found (green), while the result is shown */
   --map-wrong: #d0564e;       /* asked-for country, missed (red), while the result is shown */
